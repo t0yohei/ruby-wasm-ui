@@ -6,12 +6,17 @@ module RubyWasmUi
       FRAGMENT: 'fragment'
     }
 
-    def initialize(tag, props = {}, children = [])
+    def initialize(tag, props = {}, children = [], type = DOM_TYPES[:ELEMENT], value = nil)
       @tag = tag
       @props = props
-      @children = map_text_nodes(RubyWasmUi::Arrays.without_nulls(children)),
-      @type = DOM_TYPES[:ELEMENT]
+      @children = map_text_nodes(RubyWasmUi::Arrays.without_nulls(children))
+      @type = type
+      @el = nil
+      @listeners = {}
+      @value = value
     end
+
+    attr_accessor :tag, :props, :children, :type, :el, :listeners, :value
 
     private
 
@@ -20,18 +25,11 @@ module RubyWasmUi
     end
 
     def h_string(str)
-      puts "h_string"
-      {
-        type: DOM_TYPES[:TEXT],
-        value: str
-      }
+      self.class.new('', {}, [], DOM_TYPES[:TEXT], str)
     end
 
     def self.h_fragment(v_nodes)
-      {
-        type: DOM_TYPES[:FRAGMENT],
-        children: map_text_nodes(RubyWasmUi::Arrays.without_nulls(v_nodes))
-      }
+      self.class.new('', {}, map_text_nodes(RubyWasmUi::Arrays.without_nulls(v_nodes)), DOM_TYPES[:FRAGMENT])
     end
   end
 end

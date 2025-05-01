@@ -20,3 +20,8 @@ function loadRubyScript(filePath) {
 loadRubyScript("ruby_wasm_ui.rb");
 loadRubyScript("ruby_wasm_ui/h.rb");
 loadRubyScript("ruby_wasm_ui/arrays.rb");
+loadRubyScript("ruby_wasm_ui/dom.rb");
+loadRubyScript("ruby_wasm_ui/dom/events.rb");
+loadRubyScript("ruby_wasm_ui/dom/attributes.rb");
+loadRubyScript("ruby_wasm_ui/dom/destroy_dom.rb");
+loadRubyScript("ruby_wasm_ui/dom/mount_dom.rb");

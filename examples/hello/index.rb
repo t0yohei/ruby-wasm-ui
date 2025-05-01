@@ -1,8 +1,34 @@
+require "js"
 puts "Hello, world!"
 
 h = RubyWasmUi::H.new("div", {}, [RubyWasmUi::H.new("h1", {}, ["Hello, world!"])])
 puts h.to_s
 puts h.inspect
+
+element = JS.global[:document].getElementById("app")
+
+RubyWasmUi::Dom::Events.add_event_listener("click", ->(e) { puts "clicked" }, element)
+
+attributes = RubyWasmUi::Dom::Attributes.new(element)
+attributes.set_attributes({
+  class: "bg-red-500"
+})
+attributes.set_attribute("data-test", "test")
+
+puts attributes.inspect
+puts element.inspect
+puts element[:className].inspect
+
+attributes.set_class("bg-blue-500")
+attributes.set_styles({
+  "background-color": "red"
+})
+# attributes.remove_attribute("data-test")
+# attributes.remove_style("background-color")
+
+RubyWasmUi::Dom::MountDom.mount(h, element)
+
+# RubyWasmUi::Dom::DestroyDom.destroy(h)
 
 # state = {
 #   url_name: '',
