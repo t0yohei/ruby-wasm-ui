@@ -1,0 +1,29 @@
+{
+  "name": "ruby-wasm-ui",
+  "version": "0.0.1",
+  "description": "",
+  "main": "dist/ruby-wasm-ui.js",
+  "files": [
+    "dist/ruby-wasm-ui.js"
+  ],
+  "scripts": {
+    "prepack": "npm run build",
+    "build": "rollup -c",
+    "lint": "eslint src",
+    "lint:fix": "eslint src --fix",
+    "test": "vitest",
+    "test:run": "vitest run"
+  },
+  "keywords": ["ruby", "wasm", "ui"],
+  "author": "t0yohei <k.t0yohei@gmail.com>",
+  "license": "MIT",
+  "type": "module",
+  "devDependencies": {
+    "eslint": "^9.25.1",
+    "jsdom": "^26.1.0",
+    "rollup": "^4.40.0",
+    "rollup-plugin-cleanup": "^3.2.1",
+    "rollup-plugin-filesize": "^10.0.0",
+    "vitest": "^3.1.2"
+  }
+}

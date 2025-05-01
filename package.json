@@ -1,0 +1,20 @@
+{
+  "name": "ruby-wasm-ui-project",
+  "version": "0.0.1",
+  "private": true,
+  "description": "A project to ruby.wasm ui framework",
+  "scripts": {
+    "serve:examples": "npx http-server . -o ./examples/"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/t0yohei/ruby-wasm-ui.git"
+  },
+  "keywords": ["ruby", "wasm", "ui"],
+  "author": "t0yohei <k.t0yohei@gmail.com>",
+  "license": "MIT",
+  "type": "module",
+  "workspaces": [
+    "packages/runtime"
+  ]
+}
