@@ -15,6 +15,6 @@
   "license": "MIT",
   "type": "module",
   "workspaces": [
-    "packages/runtime"
+    "packages/*"
   ]
 }

@@ -14,7 +14,11 @@
     "test": "vitest",
     "test:run": "vitest run"
   },
-  "keywords": ["ruby", "wasm", "ui"],
+  "keywords": [
+    "ruby",
+    "wasm",
+    "ui"
+  ],
   "author": "t0yohei <k.t0yohei@gmail.com>",
   "license": "MIT",
   "type": "module",
