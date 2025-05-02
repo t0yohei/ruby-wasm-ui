@@ -25,3 +25,5 @@ loadRubyScript("ruby_wasm_ui/dom/events.rb");
 loadRubyScript("ruby_wasm_ui/dom/attributes.rb");
 loadRubyScript("ruby_wasm_ui/dom/destroy_dom.rb");
 loadRubyScript("ruby_wasm_ui/dom/mount_dom.rb");
+loadRubyScript("ruby_wasm_ui/app.rb");
+loadRubyScript("ruby_wasm_ui/dispatcher.rb");

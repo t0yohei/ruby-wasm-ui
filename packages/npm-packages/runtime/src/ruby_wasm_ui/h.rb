@@ -21,11 +21,11 @@ module RubyWasmUi
     private
 
     def map_text_nodes(children)
-      children.map { |child| child.is_a?(String) ? h_string(child) : child }
+      children.map { |child| child.is_a?(String) || child.is_a?(Integer) ? h_string(child) : child }
     end
 
     def h_string(str)
-      self.class.new('', {}, [], DOM_TYPES[:TEXT], str)
+      self.class.new('', {}, [], DOM_TYPES[:TEXT], str.to_s)
     end
 
     def self.h_fragment(v_nodes)
