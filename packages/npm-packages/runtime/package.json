@@ -23,6 +23,7 @@
   "license": "MIT",
   "type": "module",
   "devDependencies": {
+    "@rollup/plugin-replace": "^6.0.2",
     "eslint": "^9.25.1",
     "jsdom": "^26.1.0",
     "rollup": "^4.40.0",

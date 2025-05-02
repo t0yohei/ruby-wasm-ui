@@ -7,7 +7,12 @@ scriptElement.setAttribute("defer", "");
 userDefinedRubyScript.before(scriptElement);
 
 function loadRubyScript(filePath) {
-  const baseUrl = "../../packages/npm-packages/runtime/src";
+  let baseUrl;
+  if (window.RUBY_WASM_UI_ENV === "production") {
+    baseUrl = "https://unpkg.com/ruby-wasm-ui@latest/dist/";
+  } else {
+    baseUrl = "../../packages/npm-packages/runtime/src";
+  }
   let rubyScriptElement = document.createElement("script");
   rubyScriptElement.type = "text/ruby";
   rubyScriptElement.chrset = "utf-8";
