@@ -1,16 +1,16 @@
 module RubyWasmUi
   class App
-    def self.create(state:, view:, reducers: {})
-      new(state, view, reducers)
+    def self.create(state:, view:, actions: {})
+      new(state, view, actions)
     end
 
     # @param state [Object]
     # @param view [Proc]
-    # @param reducers [Hash]
-    def initialize(state, view, reducers)
+    # @param actions [Hash]
+    def initialize(state, view, actions)
       @state = state
       @view = view
-      @reducers = reducers
+      @actions = actions
       @parent_el = nil
       @vdom = nil
       @dispatcher = Dispatcher.new
@@ -39,9 +39,9 @@ module RubyWasmUi
     def setup_subscriptions
       @subscriptions << @dispatcher.after_every_command(method(:render_app))
 
-      @reducers.each do |action_name, reducer|
+      @actions.each do |action_name, action|
         handler = ->(payload) {
-          @state = reducer.call(@state, payload)
+          @state = action.call(@state, payload)
         }
         @subscriptions << @dispatcher.subscribe(action_name, handler)
       end

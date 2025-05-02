@@ -13,7 +13,7 @@ app_a = RubyWasmUi::App.create(
     count: 0
   },
   view:,
-  reducers: {
+  actions: {
     increment: ->(state, payload) {
       { count: state[:count] + 1 }
     }
@@ -29,7 +29,7 @@ app_b = RubyWasmUi::App.create(
     count: 0
   },
   view:,
-  reducers: {
+  actions: {
     increment: ->(state, payload) {
       { count: state[:count] + 1 }
     }
