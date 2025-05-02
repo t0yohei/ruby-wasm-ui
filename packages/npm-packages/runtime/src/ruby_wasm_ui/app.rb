@@ -28,7 +28,7 @@ module RubyWasmUi
 
     # @return [void]
     def unmount
-      destroy_dom(@vdom) if @vdom
+      RubyWasmUi::Dom::DestroyDom.execute(@vdom) if @vdom
       @vdom = nil
       @subscriptions.each(&:call)
     end
@@ -49,9 +49,9 @@ module RubyWasmUi
 
     # @return [void]
     def render_app
-      RubyWasmUi::Dom::DestroyDom.destroy(@vdom) if @vdom
+      RubyWasmUi::Dom::DestroyDom.execute(@vdom) if @vdom
       @vdom = @view.call(@state, method(:emit))
-      RubyWasmUi::Dom::MountDom.mount(@vdom, @parent_el)
+      RubyWasmUi::Dom::MountDom.execute(@vdom, @parent_el)
     end
 
     # @param event_name [String]

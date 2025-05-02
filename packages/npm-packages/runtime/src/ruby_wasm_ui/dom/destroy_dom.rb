@@ -2,7 +2,7 @@ module RubyWasmUi
   module Dom
     class DestroyDom
       # @param vdom [RubyWasmUi::H]
-      def self.destroy(vdom)
+      def self.execute(vdom)
         case vdom.type
         when RubyWasmUi::H::DOM_TYPES[:TEXT]
           remove_text_node(vdom)
@@ -29,7 +29,7 @@ module RubyWasmUi
         listeners = vdom.listeners
 
         el&.remove
-        children&.each { |child| destroy(child) }
+        children&.each { |child| execute(child) }
 
         if listeners
           Events.remove_event_listeners(listeners, el)
@@ -39,7 +39,7 @@ module RubyWasmUi
 
       def self.remove_fragment_nodes(vdom)
         children = vdom.children
-        children&.each { |child| destroy(child) }
+        children&.each { |child| execute(child) }
       end
     end
   end

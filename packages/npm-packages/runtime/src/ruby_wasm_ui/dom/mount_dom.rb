@@ -3,7 +3,7 @@ module RubyWasmUi
     class MountDom
       # @param vdom [RubyWasmUi::H]
       # @param parent_el [JS::Object]
-      def self.mount(vdom, parent_el)
+      def self.execute(vdom, parent_el)
         case vdom.type
         when RubyWasmUi::H::DOM_TYPES[:TEXT]
           create_text_node(vdom, parent_el)
@@ -30,7 +30,7 @@ module RubyWasmUi
         vdom.el = element
 
         vdom.children&.each do |child|
-          mount(child, element)
+          execute(child, element)
         end
 
         parent_el.append(element)
@@ -50,7 +50,7 @@ module RubyWasmUi
         vdom.el = parent_el
 
         vdom.children&.each do |child|
-          mount(child, parent_el)
+          execute(child, parent_el)
         end
       end
     end
