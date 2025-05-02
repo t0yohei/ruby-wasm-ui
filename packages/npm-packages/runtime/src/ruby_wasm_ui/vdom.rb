@@ -10,52 +10,54 @@ module RubyWasmUi
     # @param props [Hash]
     # @param children [Array]
     # @param type [Symbol]
+    # @param value [Object]
     # @return [Vdom]
-    def self.h(tag, props = {}, children = [], type = DOM_TYPES[:ELEMENT])
-      new(tag, props, children, type)
+    def self.h(tag, props = {}, children = [], type = DOM_TYPES[:ELEMENT], value = nil)
+      new(tag, props, children, type, value)
     end
 
     # @param str [String]
     # @return [Vdom]
     def self.h_string(str)
-      vdom = new('', {}, [], DOM_TYPES[:TEXT])
-      vdom.value = str.to_s
+      vdom = new('', {}, [], DOM_TYPES[:TEXT], str.to_s)
       vdom
     end
 
     # @param vdoms [Array]
     # @return [Vdom]
     def self.h_fragment(vdoms)
-      new('', {}, map_text_nodes(RubyWasmUi::Arrays.without_nulls(vdoms)), DOM_TYPES[:FRAGMENT])
+      new('', {}, map_text_nodes(RubyWasmUi::Arrays.without_nulls(vdoms)), DOM_TYPES[:FRAGMENT], nil)
     end
 
     # @param type [Symbol]
     # @param props [Hash]
     # @param children [Array]
-    def initialize(tag, props, children, type)
+    # @param value [Object]
+    # @return [Vdom]
+    def initialize(tag, props, children, type, value)
       @tag = tag
       @props = props
-      @children = map_text_nodes(RubyWasmUi::Arrays.without_nulls(children))
+      @children = self.class.map_text_nodes(RubyWasmUi::Arrays.without_nulls(children))
       @type = type
-      @value = nil
+      @value = value.to_s
       @el = nil
       @listeners = {}
     end
 
-    attr_reader :tag, :props, :children, :type
-    attr_accessor :el, :listeners, :value
+    attr_reader :tag, :props, :children, :type, :value
+    attr_accessor :el, :listeners
 
     private
 
     # @param children [Array]
-    def map_text_nodes(children)
-      children.map { |child| is_text_node?(child) ? self.class.h_string(child) : child }
+    def self.map_text_nodes(children)
+      children.map { |child| is_text_node?(child) ? h_string(child) : child }
     end
 
     # @param child [Object]
     # @return [Boolean]
-    def is_text_node?(child)
-      child.is_a?(String) || child.is_a?(Integer)
+    def self.is_text_node?(child)
+      child.is_a?(String) || child.is_a?(Integer) || child.is_a?(JS::Object)
     end
   end
 end

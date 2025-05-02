@@ -33,8 +33,9 @@ module RubyWasmUi
     # @param command_name [String]
     # @param payload [Object]
     def dispatch(command_name, payload)
-      if @subs.key?(command_name)
-        @subs[command_name].each { |handler| handler.call(payload) }
+      command_name_sym = command_name.to_sym
+      if @subs.key?(command_name_sym)
+        @subs[command_name_sym].each { |handler| handler.call(payload) }
       else
         warn "No handlers for command: #{command_name}"
       end
