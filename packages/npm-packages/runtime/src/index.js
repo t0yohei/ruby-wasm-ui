@@ -9,7 +9,7 @@ userDefinedRubyScript.before(scriptElement);
 function loadRubyScript(filePath) {
   let baseUrl;
   if (window.RUBY_WASM_UI_ENV === "production") {
-    baseUrl = "https://unpkg.com/ruby-wasm-ui@latest/dist/";
+    baseUrl = "https://unpkg.com/ruby-wasm-ui@latest/dist";
   } else {
     baseUrl = "../../packages/npm-packages/runtime/src";
   }
