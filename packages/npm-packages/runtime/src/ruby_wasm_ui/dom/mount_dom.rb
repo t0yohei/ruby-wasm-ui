@@ -1,15 +1,15 @@
 module RubyWasmUi
   module Dom
     class MountDom
-      # @param vdom [RubyWasmUi::H]
+      # @param vdom [RubyWasmUi::Vdom]
       # @param parent_el [JS::Object]
       def self.execute(vdom, parent_el)
         case vdom.type
-        when RubyWasmUi::H::DOM_TYPES[:TEXT]
+        when RubyWasmUi::Vdom::DOM_TYPES[:TEXT]
           create_text_node(vdom, parent_el)
-        when RubyWasmUi::H::DOM_TYPES[:ELEMENT]
+        when RubyWasmUi::Vdom::DOM_TYPES[:ELEMENT]
           create_element_node(vdom, parent_el)
-        when RubyWasmUi::H::DOM_TYPES[:FRAGMENT]
+        when RubyWasmUi::Vdom::DOM_TYPES[:FRAGMENT]
           create_fragment_nodes(vdom, parent_el)
         else
           raise "Can't mount DOM of type: #{vdom.type}"

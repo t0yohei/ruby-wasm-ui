@@ -18,7 +18,7 @@ function loadRubyScript(filePath) {
 
 //Load ruby_wasm_ui.rb
 loadRubyScript("ruby_wasm_ui.rb");
-loadRubyScript("ruby_wasm_ui/h.rb");
+loadRubyScript("ruby_wasm_ui/vdom.rb");
 loadRubyScript("ruby_wasm_ui/arrays.rb");
 loadRubyScript("ruby_wasm_ui/dom.rb");
 loadRubyScript("ruby_wasm_ui/dom/events.rb");

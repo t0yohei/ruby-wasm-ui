@@ -1,14 +1,14 @@
 module RubyWasmUi
   module Dom
     class DestroyDom
-      # @param vdom [RubyWasmUi::H]
+      # @param vdom [RubyWasmUi::Vdom]
       def self.execute(vdom)
         case vdom.type
-        when RubyWasmUi::H::DOM_TYPES[:TEXT]
+        when RubyWasmUi::Vdom::DOM_TYPES[:TEXT]
           remove_text_node(vdom)
-        when RubyWasmUi::H::DOM_TYPES[:ELEMENT]
+        when RubyWasmUi::Vdom::DOM_TYPES[:ELEMENT]
           remove_element_node(vdom)
-        when RubyWasmUi::H::DOM_TYPES[:FRAGMENT]
+        when RubyWasmUi::Vdom::DOM_TYPES[:FRAGMENT]
           remove_fragment_nodes(vdom)
         else
           raise "Can't destroy DOM of type: #{vdom.type}"
