@@ -1,10 +1,12 @@
 {
   "name": "ruby-wasm-ui",
-  "version": "0.0.2",
+  "version": "0.0.3",
   "description": "",
   "main": "dist/ruby-wasm-ui.js",
   "files": [
-    "dist/ruby-wasm-ui.js"
+    "dist/ruby-wasm-ui.js",
+    "dist/ruby_wasm_ui.rb",
+    "dist/ruby_wasm_ui/**/*.rb"
   ],
   "scripts": {
     "prepack": "npm run build",
