@@ -1,0 +1,33 @@
+name: RSpec
+
+on:
+  push:
+    branches:
+      - main
+  pull_request:
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        ruby-version: ["3.4.0"]
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Ruby
+        uses: ruby/setup-ruby@v1
+        with:
+          ruby-version: ${{ matrix.ruby-version }}
+          bundler-cache: true
+
+      - name: Install dependencies
+        run: |
+          cd packages/npm-packages/runtime
+          bundle install
+
+      - name: Run RSpec
+        run: |
+          cd packages/npm-packages/runtime
+          bundle exec rspec
