@@ -4,13 +4,18 @@
   "private": true,
   "description": "A project to ruby.wasm ui framework",
   "scripts": {
-    "serve:examples": "npx http-server . -o ./examples/"
+    "serve:examples": "npx http-server . -o './examples/?env=PRD' --cors -P 'http://localhost:8080?'",
+    "serve:examples:dev": "npx http-server . -o './examples/?env=DEV' --cors -P 'http://localhost:8080?'"
   },
   "repository": {
     "type": "git",
     "url": "git+https://github.com/t0yohei/ruby-wasm-ui.git"
   },
-  "keywords": ["ruby", "wasm", "ui"],
+  "keywords": [
+    "ruby",
+    "wasm",
+    "ui"
+  ],
   "author": "t0yohei <k.t0yohei@gmail.com>",
   "license": "MIT",
   "type": "module",
