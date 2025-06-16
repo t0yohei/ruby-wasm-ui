@@ -4,7 +4,13 @@ on:
   push:
     branches:
       - main
+    paths:
+      - "packages/npm-packages/runtime/**/*.rb"
+      - ".github/workflows/rspec.yml"
   pull_request:
+    paths:
+      - "packages/npm-packages/runtime/**/*.rb"
+      - ".github/workflows/rspec.yml"
 
 jobs:
   test:
