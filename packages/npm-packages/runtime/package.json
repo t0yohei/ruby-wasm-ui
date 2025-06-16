@@ -10,7 +10,8 @@
   ],
   "scripts": {
     "prepack": "npm run build",
-    "build": "rollup -c",
+    "build": "NODE_ENV=production rollup -c",
+    "build:dev": "NODE_ENV=development rollup -c",
     "lint": "eslint src",
     "lint:fix": "eslint src --fix",
     "test": "vitest",

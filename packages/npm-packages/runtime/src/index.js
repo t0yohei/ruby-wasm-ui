@@ -1,4 +1,6 @@
-const userDefinedRubyScript = document.querySelector("script[type='text/ruby']");
+const userDefinedRubyScript = document.querySelector(
+  "script[type='text/ruby']"
+);
 
 const scriptElement = document.createElement("script");
 scriptElement.src =
@@ -21,14 +23,15 @@ function loadRubyScript(filePath) {
   userDefinedRubyScript.before(rubyScriptElement);
 }
 
-//Load ruby_wasm_ui.rb
+// Load ruby_wasm_ui.rb
 loadRubyScript("ruby_wasm_ui.rb");
-loadRubyScript("ruby_wasm_ui/vdom.rb");
-loadRubyScript("ruby_wasm_ui/arrays.rb");
-loadRubyScript("ruby_wasm_ui/dom.rb");
-loadRubyScript("ruby_wasm_ui/dom/events.rb");
-loadRubyScript("ruby_wasm_ui/dom/attributes.rb");
-loadRubyScript("ruby_wasm_ui/dom/destroy_dom.rb");
-loadRubyScript("ruby_wasm_ui/dom/mount_dom.rb");
-loadRubyScript("ruby_wasm_ui/app.rb");
-loadRubyScript("ruby_wasm_ui/dispatcher.rb");
+
+// Load all Ruby files in ruby_wasm_ui directory
+const rubyFiles = window.RUBY_WASM_UI_FILES;
+if (rubyFiles === undefined) {
+  throw new Error(
+    "RUBY_WASM_UI_FILES is not defined. This file should be built with rollup."
+  );
+}
+
+rubyFiles.forEach((file) => loadRubyScript(file));
