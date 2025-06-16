@@ -26,7 +26,7 @@ module RubyWasmUi
     # @param vdoms [Array]
     # @return [Vdom]
     def self.h_fragment(vdoms)
-      new('', {}, map_text_nodes(RubyWasmUi::Arrays.without_nulls(vdoms)), DOM_TYPES[:FRAGMENT], nil)
+      new('', {}, map_text_nodes(RubyWasmUi::Utils::Arrays.without_nulls(vdoms)), DOM_TYPES[:FRAGMENT], nil)
     end
 
     # @param type [Symbol]
@@ -37,7 +37,7 @@ module RubyWasmUi
     def initialize(tag, props, children, type, value)
       @tag = tag
       @props = props
-      @children = self.class.map_text_nodes(RubyWasmUi::Arrays.without_nulls(children))
+      @children = self.class.map_text_nodes(RubyWasmUi::Utils::Arrays.without_nulls(children))
       @type = type
       @value = value.to_s
       @el = nil
