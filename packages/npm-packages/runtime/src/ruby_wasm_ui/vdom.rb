@@ -59,5 +59,23 @@ module RubyWasmUi
     def self.is_text_node?(child)
       child.is_a?(String) || child.is_a?(Integer) || child.is_a?(JS::Object)
     end
+
+    # @param vdom [Vdom]
+    # @return [Array]
+    def self.extract_children(vdom)
+      return [] if vdom.children.nil?
+
+      children = []
+
+      vdom.children.each do |child|
+        if child.type == DOM_TYPES[:FRAGMENT]
+          children.concat(extract_children(child))
+        else
+          children << child
+        end
+      end
+
+      children
+    end
   end
 end

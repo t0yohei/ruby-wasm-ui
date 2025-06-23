@@ -23,7 +23,8 @@ module RubyWasmUi
     # @return [void]
     def mount(parent_el)
       @parent_el = parent_el
-      render_app
+      @vdom = @view.call(@state, method(:emit))
+      RubyWasmUi::Dom::MountDom.execute(@vdom, @parent_el)
     end
 
     # @return [void]
@@ -49,9 +50,8 @@ module RubyWasmUi
 
     # @return [void]
     def render_app
-      RubyWasmUi::Dom::DestroyDom.execute(@vdom) if @vdom
-      @vdom = @view.call(@state, method(:emit))
-      RubyWasmUi::Dom::MountDom.execute(@vdom, @parent_el)
+      new_vdom = @view.call(@state, method(:emit))
+      @vdom = RubyWasmUi::Dom::PatchDom.execute(@vdom, new_vdom, @parent_el)
     end
 
     # @param event_name [String]

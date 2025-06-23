@@ -3,37 +3,64 @@ module RubyWasmUi
     class MountDom
       # @param vdom [RubyWasmUi::Vdom]
       # @param parent_el [JS::Object]
-      def self.execute(vdom, parent_el)
+      # @param index [Integer, nil] Index position to insert at
+      def self.execute(vdom, parent_el, index = nil)
         case vdom.type
         when RubyWasmUi::Vdom::DOM_TYPES[:TEXT]
-          create_text_node(vdom, parent_el)
+          create_text_node(vdom, parent_el, index)
         when RubyWasmUi::Vdom::DOM_TYPES[:ELEMENT]
-          create_element_node(vdom, parent_el)
+          create_element_node(vdom, parent_el, index)
         when RubyWasmUi::Vdom::DOM_TYPES[:FRAGMENT]
-          create_fragment_nodes(vdom, parent_el)
+          create_fragment_nodes(vdom, parent_el, index)
         else
           raise "Can't mount DOM of type: #{vdom.type}"
         end
       end
 
-      private
+      # @param el [JS::Object] Element to insert
+      # @param parent_el [JS::Object] Parent element
+      # @param index [Integer, nil] Index position to insert at
+      def self.insert(el, parent_el, index)
+        # If index is nil or undefined, simply append to the end
+        if index.nil?
+          parent_el.append(el)
+          return
+        end
 
-      def self.create_text_node(vdom, parent_el)
-        text_node = JS.global[:document].createTextNode(vdom.value)
-        vdom.el = text_node
-        parent_el.append(text_node)
+        # If index is negative, raise an error
+        if index < 0
+          raise "Index must be a positive integer, got #{index}"
+        end
+
+        children = parent_el[:childNodes]
+
+        # If index is greater than or equal to the number of children, append to the end
+        if index >= children[:length].to_i # to_i is necessary because length is a JS::Number
+          parent_el.append(el)
+        else
+          # Insert at the specified index position
+          parent_el.insertBefore(el, children[index])
+        end
       end
 
-      def self.create_element_node(vdom, parent_el)
+      private
+
+      def self.create_text_node(vdom, parent_el, index)
+        text_node = JS.global[:document].createTextNode(vdom.value)
+        vdom.el = text_node
+        insert(text_node, parent_el, index)
+      end
+
+      def self.create_element_node(vdom, parent_el, index)
         element = JS.global[:document].createElement(vdom.tag)
         add_props(element, vdom.props, vdom)
         vdom.el = element
 
         vdom.children&.each do |child|
-          execute(child, element)
+          execute(child, element, index)
         end
 
-        parent_el.append(element)
+        insert(element, parent_el, index)
       end
 
       def self.add_props(el, props, vdom)
@@ -46,11 +73,11 @@ module RubyWasmUi
         Attributes.new(el).set_attributes(attrs) if attrs.any?
       end
 
-      def self.create_fragment_nodes(vdom, parent_el)
+      def self.create_fragment_nodes(vdom, parent_el, index)
         vdom.el = parent_el
 
-        vdom.children&.each do |child|
-          execute(child, parent_el)
+        vdom.children&.each_with_index do |child, i|
+          execute(child, parent_el, index ? index + i : nil)
         end
       end
     end
