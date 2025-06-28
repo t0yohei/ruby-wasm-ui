@@ -32,3 +32,6 @@ lerna-debug.log*
 *.njsproj
 *.sln
 *.sw?
+
+# Claude
+CLAUDE.md
