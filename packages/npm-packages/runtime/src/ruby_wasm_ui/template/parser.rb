@@ -30,6 +30,13 @@ module RubyWasmUi
             next
           end
 
+          if element[:nodeType] == JS.global[:Node][:ELEMENT_NODE]
+            if element[:tagName] == 'TEMPLATE'
+              vdom << "RubyWasmUi::Vdom.h_fragment([#{build_vdom(element[:content][:childNodes])}])"
+              next
+            end
+          end
+
           attributes_str = []
           attributes = element[:attributes]
           length = attributes[:length].to_i
