@@ -2,7 +2,7 @@
 
 require 'spec_helper'
 
-RSpec.describe RubyWasmUI::Utils::Strings do
+RSpec.describe RubyWasmUi::Utils::Strings do
   describe '.is_not_empty_string' do
     context 'Basic functionality' do
       it 'returns true for non-empty strings' do
