@@ -20,7 +20,7 @@ view = ->(state, emit) {
       </p>
     </form>
   HTML
-  eval RubyWasmUi::DomParser.parse(template)
+  eval RubyWasmUi::Template::Parser.parse(template)
 }
 
 app = RubyWasmUi::App.create(
