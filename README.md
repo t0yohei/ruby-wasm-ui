@@ -8,6 +8,7 @@ A modern web frontend framework for Ruby using [ruby.wasm](https://github.com/ru
 
 - **Reactive State Management**: Simple, predictable state updates with actions
 - **Virtual DOM**: Efficient DOM updates using a virtual DOM implementation
+- **Template Parser**: Write HTML templates with embedded Ruby expressions
 - **Event Handling**: Intuitive event system with Ruby lambdas
 - **Component Architecture**: Build reusable components with clean separation of concerns
 - **Ruby Syntax**: Write frontend applications using Ruby instead of JavaScript
@@ -44,17 +45,16 @@ actions = {
   }
 }
 
-# Define the view function
+# Define the view function using HTML templates
 view = ->(state, emit) {
-  RubyWasmUi::Vdom.h("div", {}, [
-    RubyWasmUi::Vdom.h("h1", {}, ["Count: #{state[:count]}"]),
-    RubyWasmUi::Vdom.h("button", {
-      onclick: ->(e) { emit.call(:increment) }
-    }, ["+"]),
-    RubyWasmUi::Vdom.h("button", {
-      onclick: ->(e) { emit.call(:decrement) }
-    }, ["-"])
-  ])
+  template = <<~HTML
+    <div>
+      <h1>Count: {state[:count]}</h1>
+      <button onclick="{->(e) { emit.call(:increment) }}">+</button>
+      <button onclick="{->(e) { emit.call(:decrement) }}">-</button>
+    </div>
+  HTML
+  eval RubyWasmUi::Template::Parser.parse(template)
 }
 
 # Create and mount the app
@@ -66,6 +66,32 @@ app = RubyWasmUi::App.create(
 
 app_element = JS.global[:document].getElementById("app")
 app.mount(app_element)
+```
+
+## Template Syntax
+
+Ruby expressions can be embedded in HTML templates using `{}`:
+
+```ruby
+# Display state values
+<div>{state[:message]}</div>
+
+# Conditional rendering
+<p class="{state[:is_valid] ? 'text-green-500' : 'text-red-500'}">
+  {state[:is_valid] ? 'Valid!' : 'Invalid input'}
+</p>
+
+# Event handlers
+<button onclick="{->(e) { emit.call('handle_click', e[:target][:value]) }}">
+  Click me
+</button>
+
+# Input binding
+<input 
+  type="text" 
+  value="{state[:input_value]}"
+  oninput="{->(e) { emit.call('update_input', e[:target][:value]) }}"
+/>
 ```
 
 ## Development

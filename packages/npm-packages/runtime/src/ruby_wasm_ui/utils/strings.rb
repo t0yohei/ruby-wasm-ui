@@ -1,4 +1,4 @@
-module RubyWasmUI
+module RubyWasmUi
   module Utils
     module Strings
       # @param str [String]

@@ -10,11 +10,14 @@ actions = {
 }
 
 view = ->(state, emit) {
-  RubyWasmUi::Vdom.h("div", {}, [
-    RubyWasmUi::Vdom.h("div", {}, [state[:count]]),
-    RubyWasmUi::Vdom.h("button", { onclick: ->(e) { emit.call(:increment) } }, ["Increment"]),
-    RubyWasmUi::Vdom.h("button", { onclick: ->(e) { emit.call(:decrement) } }, ["Decrement"])
-  ])
+  template = <<~HTML
+    <div>
+      <div>{state[:count]}</div>
+      <button onclick="{->(e) { emit.call(:increment) }}">Increment</button>
+      <button onclick="{->(e) { emit.call(:decrement) }}">Decrement</button>
+    </div>
+  HTML
+  eval RubyWasmUi::Template::Parser.parse(template)
 }
 
 # app_a to be destroyed

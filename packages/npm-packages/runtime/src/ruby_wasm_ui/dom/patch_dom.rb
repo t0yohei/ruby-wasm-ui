@@ -110,11 +110,11 @@ module RubyWasmUi
         diff = RubyWasmUi::Utils::Arrays.diff(old_classes, new_classes)
 
         diff[:removed].each do |key|
-          el.classList.remove(key)
+          el[:classList].remove(key)
         end
 
         diff[:added].each do |key|
-          el.classList.add(key)
+          el[:classList].add(key)
         end
       end
 

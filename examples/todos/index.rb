@@ -51,66 +51,71 @@ actions = {
   }
 }
 
-def create_todo(state, emit)
-  RubyWasmUi::Vdom.h("div", {}, [
-    RubyWasmUi::Vdom.h("label", { for: "todo-input" }, ["New TODO"]),
-    RubyWasmUi::Vdom.h("input", {
-      type: "text",
-      id: "todo-input",
-      value: state[:current_todo],
-      oninput: ->(e) { emit.call("update-current-todo", e[:target][:value]) },
-      onkeydown: ->(e) {
-        if e[:key] == "Enter" && state[:current_todo].length >= 3
-          emit.call("add-todo")
-        end
-      }
-    }, []),
-    RubyWasmUi::Vdom.h("button", {
-      disabled: state[:current_todo].length < 3,
-      onclick: ->(_e) { emit.call("add-todo") }
-    }, ["Add"])
-  ])
+def create_todo_template(state, emit)
+  template = <<~HTML
+    <div>
+      <label for="todo-input">New TODO</label>
+      <input
+        type="text"
+        id="todo-input"
+        value="{state[:current_todo]}"
+        oninput="{->(e) { emit.call('update-current-todo', e[:target][:value]) }}"
+        onkeydown="{->(e) { emit.call('add-todo') if e[:key] == 'Enter' && state[:current_todo].length >= 3 }}"
+      />
+      <button
+        disabled="{state[:current_todo].length < 3}"
+        onclick="{->(_e) { emit.call('add-todo') }}"
+      >
+        Add
+      </button>
+    </div>
+  HTML
+  eval RubyWasmUi::Template::Parser.parse(template)
 end
 
-def todo_item(todo, i, edit, emit)
-  is_editing = edit[:idx] == i
-
+def todo_item_template(todo, i, is_editing, edit, emit)
   if is_editing
-    RubyWasmUi::Vdom.h("li", {}, [
-      RubyWasmUi::Vdom.h("input", {
-        value: edit[:edited],
-        oninput: ->(e) { emit.call("edit-todo", e[:target][:value]) }
-      }, []),
-      RubyWasmUi::Vdom.h("button", {
-        onclick: ->(_e) { emit.call("save-edited-todo") }
-      }, ["Save"]),
-      RubyWasmUi::Vdom.h("button", {
-        onclick: ->(_e) { emit.call("cancel-editing-todo") }
-      }, ["Cancel"])
-    ])
+    template = <<~HTML
+      <li>
+        <input
+          value="{edit[:edited]}"
+          oninput="{->(e) { emit.call('edit-todo', e[:target][:value]) }}"
+        />
+        <button onclick="{->(_e) { emit.call('save-edited-todo') }}">Save</button>
+        <button onclick="{->(_e) { emit.call('cancel-editing-todo') }}">Cancel</button>
+      </li>
+    HTML
   else
-    RubyWasmUi::Vdom.h("li", {}, [
-      RubyWasmUi::Vdom.h("span", {
-        ondblclick: ->(_e) { emit.call("start-editing-todo", i) }
-      }, [todo]),
-      RubyWasmUi::Vdom.h("button", {
-        onclick: ->(_e) { emit.call("remove-todo", i) }
-      }, ["Done"])
-    ])
+    template = <<~HTML
+      <li>
+        <span ondblclick="{->(_e) { emit.call('start-editing-todo', #{i}) }}">{todo}</span>
+        <button onclick="{->(_e) { emit.call('remove-todo', #{i}) }}">Done</button>
+      </li>
+    HTML
   end
+  eval RubyWasmUi::Template::Parser.parse(template)
 end
 
-def todo_list(state, emit)
-  RubyWasmUi::Vdom.h("ul", {},
-    state[:todos].map.with_index { |todo, i| todo_item(todo, i, state[:edit], emit) }
-  )
+def todo_list_template(state, emit)
+  items = state[:todos].map.with_index do |todo, i|
+    is_editing = state[:edit][:idx] == i
+    todo_item_template(todo, i, is_editing, state[:edit], emit)
+  end
+
+  RubyWasmUi::Vdom.h("ul", {}, items)
 end
 
 view = ->(state, emit) {
+  template = <<~HTML
+    <template>
+      <h1>My TODOs</h1>
+    </template>
+  HTML
+
   RubyWasmUi::Vdom.h_fragment([
-    RubyWasmUi::Vdom.h("h1", {}, ["My TODOs"]),
-    create_todo(state, emit),
-    todo_list(state, emit)
+    eval(RubyWasmUi::Template::Parser.parse(template)),
+    create_todo_template(state, emit),
+    todo_list_template(state, emit)
   ])
 }
 
