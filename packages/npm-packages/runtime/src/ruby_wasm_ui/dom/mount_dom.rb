@@ -4,7 +4,8 @@ module RubyWasmUi
       # @param vdom [RubyWasmUi::Vdom]
       # @param parent_el [JS::Object]
       # @param index [Integer, nil] Index position to insert at
-      def self.execute(vdom, parent_el, index = nil)
+      # @param hostComponent [RubyWasmUi::Component, nil] Host component
+      def self.execute(vdom, parent_el, index = nil, hostComponent = nil)
         case vdom.type
         when RubyWasmUi::Vdom::DOM_TYPES[:TEXT]
           create_text_node(vdom, parent_el, index)

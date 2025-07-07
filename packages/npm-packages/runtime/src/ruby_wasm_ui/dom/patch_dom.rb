@@ -4,8 +4,9 @@ module RubyWasmUi
       # @param old_vdom [RubyWasmUi::Vdom]
       # @param new_vdom [RubyWasmUi::Vdom]
       # @param parent_el [JS::Object]
+      # @param host_component [RubyWasmUi::Component, nil]
       # @return [RubyWasmUi::Vdom]
-      def self.execute(old_vdom, new_vdom, parent_el)
+      def self.execute(old_vdom, new_vdom, parent_el, host_component = nil)
         if !NodesEqual.equal?(old_vdom, new_vdom)
           index = find_index_in_parent(parent_el, old_vdom.el)
           RubyWasmUi::Dom::DestroyDom.execute(old_vdom)
@@ -27,7 +28,7 @@ module RubyWasmUi
           # noop
         end
 
-        patch_children(old_vdom, new_vdom)
+        patch_children(old_vdom, new_vdom, host_component)
 
         new_vdom
       end
@@ -166,8 +167,9 @@ module RubyWasmUi
 
       # @param old_vdom [RubyWasmUi::Vdom]
       # @param new_vdom [RubyWasmUi::Vdom]
+      # @param host_component [RubyWasmUi::Component, nil]
       # @return [void]
-      def self.patch_children(old_vdom, new_vdom)
+      def self.patch_children(old_vdom, new_vdom, host_component)
         old_children = RubyWasmUi::Vdom.extract_children(old_vdom)
         new_children = RubyWasmUi::Vdom.extract_children(new_vdom)
         parent_el = old_vdom.el
@@ -180,22 +182,23 @@ module RubyWasmUi
           original_index = operation[:original_index]
           index = operation[:index]
           item = operation[:item]
+          offset = host_component&.offset || 0
 
           case operation[:op]
           when 'add'
-            RubyWasmUi::Dom::MountDom.execute(item, parent_el, index)
+            RubyWasmUi::Dom::MountDom.execute(item, parent_el, index + offset, host_component)
           when 'remove'
             RubyWasmUi::Dom::DestroyDom.execute(item)
           when 'move'
             old_child = old_children[original_index]
             new_child = new_children[index]
             el = old_child.el
-            el_at_target_index = parent_el[:childNodes][index]
+            el_at_target_index = parent_el[:childNodes][index + offset]
 
             parent_el.insertBefore(el, el_at_target_index)
-            RubyWasmUi::Dom::PatchDom.execute(old_child, new_child, parent_el)
+            RubyWasmUi::Dom::PatchDom.execute(old_child, new_child, parent_el, host_component)
           when 'noop'
-            RubyWasmUi::Dom::PatchDom.execute(old_children[original_index], new_children[index], parent_el)
+            RubyWasmUi::Dom::PatchDom.execute(old_children[original_index], new_children[index], parent_el, host_component)
           end
         end
       end
