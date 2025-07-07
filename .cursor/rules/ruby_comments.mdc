@@ -1,0 +1,29 @@
+When writing or modifying Ruby code:
+
+1. Comments and Documentation
+- All comments MUST be written in English
+- Use YARD documentation style for methods and classes
+- Include @param and @return tags for method documentation
+- Keep comments clear and concise
+
+2. Documentation Examples:
+
+Good:
+```ruby
+# Create a new component instance
+# @param props [Hash] Component properties
+def initialize(props = {})
+  # Initialize component state
+  @state = {}
+end
+```
+
+3. Documentation Requirements:
+- Document all public methods
+- Include type information for parameters and return values
+- Use descriptive English names for methods and variables
+- Add context when the code's purpose isn't immediately clear
+description:
+globs:
+alwaysApply: false
+---
