@@ -1,11 +1,11 @@
 module RubyWasmUi
   module Dom
-    class MountDom
+    module MountDom
       # @param vdom [RubyWasmUi::Vdom]
       # @param parent_el [JS::Object]
       # @param index [Integer, nil] Index position to insert at
       # @param hostComponent [RubyWasmUi::Component, nil] Host component
-      def self.execute(vdom, parent_el, index = nil, hostComponent = nil)
+      def execute(vdom, parent_el, index = nil, hostComponent = nil)
         case vdom.type
         when RubyWasmUi::Vdom::DOM_TYPES[:TEXT]
           create_text_node(vdom, parent_el, index)
@@ -21,7 +21,7 @@ module RubyWasmUi
       # @param el [JS::Object] Element to insert
       # @param parent_el [JS::Object] Parent element
       # @param index [Integer, nil] Index position to insert at
-      def self.insert(el, parent_el, index)
+      def insert(el, parent_el, index)
         # If index is nil or undefined, simply append to the end
         if index.nil?
           parent_el.append(el)
@@ -43,6 +43,8 @@ module RubyWasmUi
           parent_el.insertBefore(el, children[index])
         end
       end
+
+      module_function :execute, :insert
 
       private
 

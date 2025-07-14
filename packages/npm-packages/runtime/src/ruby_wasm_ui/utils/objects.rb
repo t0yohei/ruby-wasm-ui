@@ -3,10 +3,12 @@
 module RubyWasmUi
   module Utils
     module Objects
+      module_function
+
       # @param old_obj [Hash]
       # @param new_obj [Hash]
       # @return [Hash]
-      def self.diff(old_obj, new_obj)
+      def diff(old_obj, new_obj)
         old_keys = old_obj.keys
         new_keys = new_obj.keys
 

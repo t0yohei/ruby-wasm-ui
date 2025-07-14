@@ -1,9 +1,11 @@
 module RubyWasmUi
-  class NodesEqual
+  module NodesEqual
+    module_function
+
     # @param node_one [RubyWasmUi::Vdom]
     # @param node_two [RubyWasmUi::Vdom]
     # @return [Boolean]
-    def self.equal?(node_one, node_two)
+    def equal?(node_one, node_two)
       if node_one.type != node_two.type
         return false
       end

@@ -1,8 +1,8 @@
 module RubyWasmUi
   module Dom
-    class DestroyDom
+    module DestroyDom
       # @param vdom [RubyWasmUi::Vdom]
-      def self.execute(vdom)
+      def execute(vdom)
         case vdom.type
         when RubyWasmUi::Vdom::DOM_TYPES[:TEXT]
           remove_text_node(vdom)
@@ -16,6 +16,8 @@ module RubyWasmUi
 
         vdom.el = nil
       end
+
+      module_function :execute
 
       private
 

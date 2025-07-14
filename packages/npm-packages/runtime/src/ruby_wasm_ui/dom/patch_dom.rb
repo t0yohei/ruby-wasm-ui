@@ -1,12 +1,12 @@
 module RubyWasmUi
   module Dom
-    class PatchDom
+    module PatchDom
       # @param old_vdom [RubyWasmUi::Vdom]
       # @param new_vdom [RubyWasmUi::Vdom]
       # @param parent_el [JS::Object]
       # @param host_component [RubyWasmUi::Component, nil]
       # @return [RubyWasmUi::Vdom]
-      def self.execute(old_vdom, new_vdom, parent_el, host_component = nil)
+      def execute(old_vdom, new_vdom, parent_el, host_component = nil)
         if !NodesEqual.equal?(old_vdom, new_vdom)
           index = find_index_in_parent(parent_el, old_vdom.el)
           RubyWasmUi::Dom::DestroyDom.execute(old_vdom)
@@ -32,6 +32,8 @@ module RubyWasmUi
 
         new_vdom
       end
+
+      module_function :execute
 
       private
 
