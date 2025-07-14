@@ -69,8 +69,8 @@ module RubyWasmUi
       def self.add_props(el, props, vdom)
         return unless props
 
-        events = props.delete(:on)
-        attrs = props
+        events = props[:on]
+        attrs = props.reject { |key, _| key == :on }
 
         vdom.listeners = Events.add_event_listeners(events, el) if events
         Attributes.new(el).set_attributes(attrs) if attrs.any?

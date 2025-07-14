@@ -8,8 +8,9 @@ module RubyWasmUi
       # @param element [JS::Object]
       # @return [Proc]
       def add_event_listener(event_name, handler, element)
-        element.addEventListener(event_name, handler)
-        handler
+        call_handler = JS.try_convert(->(event) { handler.call(event) })
+        element.call(:addEventListener, event_name.to_s, call_handler)
+        call_handler
       end
 
       def add_event_listeners(listeners = {}, element)
@@ -23,8 +24,7 @@ module RubyWasmUi
       # @param element [JS::Object]
       def remove_event_listeners(listeners = {}, element)
         listeners.each do |event_name, handler|
-          element.remove_event_listener(event_name, handler)
-          @events[event_name]&.delete(handler)
+          element.call(:removeEventListener, event_name.to_s, handler)
         end
       end
     end

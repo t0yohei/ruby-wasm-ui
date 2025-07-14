@@ -148,7 +148,7 @@ module RubyWasmUi
         # Remove old event listeners for removed and updated events
         (diff[:removed] + diff[:updated]).each do |event_name|
           if old_listeners[event_name]
-            el.removeEventListener(event_name, old_listeners[event_name])
+            el.call(:removeEventListener, event_name.to_s, old_listeners[event_name])
           end
         end
 

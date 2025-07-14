@@ -8,7 +8,9 @@ counter = RubyWasmUi::Component.define_component(
       RubyWasmUi::Vdom.h(
         "button",
         {
-          onclick: ->(e) { component.update_state(count: component.state[:count] + 1) }
+          on: {
+            click: ->(e) { component.update_state(count: component.state[:count] + 1) }
+          }
         },
         ["Increment"]
       )
