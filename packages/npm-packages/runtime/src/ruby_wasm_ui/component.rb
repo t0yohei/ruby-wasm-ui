@@ -1,9 +1,20 @@
 module RubyWasmUi
   class Component
-    def self.define_component(render:, state: nil)
+    def self.define_component(render:, state: nil, methods: {})
       Class.new(Component) do
         @@state = state
         @@render = render
+
+        # Add methods to the component
+        methods.each do |method_name, method_proc|
+          # Check if method already exists
+          if method_defined?(method_name) || private_method_defined?(method_name)
+            raise "Method \"#{method_name}()\" already exists in the component."
+          end
+
+          # Define the method dynamically
+          define_method(method_name, method_proc)
+        end
       end
     end
 
@@ -66,7 +77,7 @@ module RubyWasmUi
       raise "Component is already mounted" if @is_mounted
 
       @vdom = render
-      RubyWasmUi::Dom::MountDom.execute(@vdom, host_el, index)
+      RubyWasmUi::Dom::MountDom.execute(@vdom, host_el, index, self)
 
       @host_el = host_el
       @is_mounted = true

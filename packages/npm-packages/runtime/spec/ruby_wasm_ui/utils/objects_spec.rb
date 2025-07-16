@@ -73,4 +73,55 @@ RSpec.describe RubyWasmUi::Utils::Objects do
       end
     end
   end
+
+  describe '.has_own_property' do
+    context 'with Hash objects' do
+      let(:hash_obj) { { name: 'test', age: 25, 'city' => 'Tokyo' } }
+
+      it 'returns true when the key exists (symbol)' do
+        expect(described_class.has_own_property(hash_obj, :name)).to be true
+      end
+
+      it 'returns true when the key exists (string)' do
+        expect(described_class.has_own_property(hash_obj, 'city')).to be true
+      end
+
+      it 'returns false when the key does not exist' do
+        expect(described_class.has_own_property(hash_obj, :email)).to be false
+      end
+
+      it 'returns false when the key does not exist (string)' do
+        expect(described_class.has_own_property(hash_obj, 'country')).to be false
+      end
+
+      it 'works correctly with empty hash' do
+        empty_hash = {}
+        expect(described_class.has_own_property(empty_hash, :any_key)).to be false
+      end
+    end
+
+    context 'with custom objects' do
+      let(:custom_object) do
+        obj = Object.new
+        obj.instance_variable_set(:@name, 'test')
+        obj.instance_variable_set(:@age, 25)
+        obj
+      end
+
+      it 'returns true when the instance variable exists' do
+        expect(described_class.has_own_property(custom_object, :name)).to be true
+        expect(described_class.has_own_property(custom_object, 'age')).to be true
+      end
+
+      it 'returns false when the instance variable does not exist' do
+        expect(described_class.has_own_property(custom_object, :email)).to be false
+        expect(described_class.has_own_property(custom_object, 'city')).to be false
+      end
+
+      it 'works correctly with object without instance variables' do
+        empty_object = Object.new
+        expect(described_class.has_own_property(empty_object, :any_property)).to be false
+      end
+    end
+  end
 end
