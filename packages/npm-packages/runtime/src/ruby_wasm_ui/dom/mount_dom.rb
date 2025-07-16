@@ -10,9 +10,9 @@ module RubyWasmUi
         when RubyWasmUi::Vdom::DOM_TYPES[:TEXT]
           create_text_node(vdom, parent_el, index)
         when RubyWasmUi::Vdom::DOM_TYPES[:ELEMENT]
-          create_element_node(vdom, parent_el, index)
+          create_element_node(vdom, parent_el, index, hostComponent)
         when RubyWasmUi::Vdom::DOM_TYPES[:FRAGMENT]
-          create_fragment_nodes(vdom, parent_el, index)
+          create_fragment_nodes(vdom, parent_el, index, hostComponent)
         else
           raise "Can't mount DOM of type: #{vdom.type}"
         end
@@ -54,33 +54,33 @@ module RubyWasmUi
         insert(text_node, parent_el, index)
       end
 
-      def self.create_element_node(vdom, parent_el, index)
+      def self.create_element_node(vdom, parent_el, index, hostComponent)
         element = JS.global[:document].createElement(vdom.tag)
-        add_props(element, vdom.props, vdom)
+        add_props(element, vdom.props, vdom, hostComponent)
         vdom.el = element
 
         vdom.children&.each do |child|
-          execute(child, element, index)
+          execute(child, element, index, hostComponent)
         end
 
         insert(element, parent_el, index)
       end
 
-      def self.add_props(el, props, vdom)
+      def self.add_props(el, props, vdom, hostComponent)
         return unless props
 
-        events = props.delete(:on)
-        attrs = props
+        events = props[:on]
+        attrs = props.reject { |key, _| key == :on }
 
-        vdom.listeners = Events.add_event_listeners(events, el) if events
+        vdom.listeners = Events.add_event_listeners(el, events, hostComponent) if events
         Attributes.new(el).set_attributes(attrs) if attrs.any?
       end
 
-      def self.create_fragment_nodes(vdom, parent_el, index)
+      def self.create_fragment_nodes(vdom, parent_el, index, hostComponent)
         vdom.el = parent_el
 
         vdom.children&.each_with_index do |child, i|
-          execute(child, parent_el, index ? index + i : nil)
+          execute(child, parent_el, index ? index + i : nil, hostComponent)
         end
       end
     end

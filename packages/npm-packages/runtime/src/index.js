@@ -17,7 +17,7 @@ function loadRubyScript(filePath) {
   }
   let rubyScriptElement = document.createElement("script");
   rubyScriptElement.type = "text/ruby";
-  rubyScriptElement.chrset = "utf-8";
+  rubyScriptElement.charset = "utf-8";
   rubyScriptElement.src = `${baseUrl}/${filePath}`;
   rubyScriptElement.setAttribute("defer", "");
   userDefinedRubyScript.before(rubyScriptElement);

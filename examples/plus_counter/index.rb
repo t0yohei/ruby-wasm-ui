@@ -1,6 +1,11 @@
 require "js"
 
 counter = RubyWasmUi::Component.define_component(
+  methods: {
+    increment: -> {
+      update_state(count: state[:count] + 1)
+    }
+  },
   state: -> (props) { { count: 0 } },
   render: -> (component) {
     RubyWasmUi::Vdom.h("div", {}, [
@@ -8,7 +13,9 @@ counter = RubyWasmUi::Component.define_component(
       RubyWasmUi::Vdom.h(
         "button",
         {
-          onclick: ->(e) { component.update_state(count: component.state[:count] + 1) }
+          on: {
+            click: ->(e) { component.increment }
+          }
         },
         ["Increment"]
       )

@@ -10,7 +10,7 @@ module RubyWasmUi
         if !NodesEqual.equal?(old_vdom, new_vdom)
           index = find_index_in_parent(parent_el, old_vdom.el)
           RubyWasmUi::Dom::DestroyDom.execute(old_vdom)
-          RubyWasmUi::Dom::MountDom.execute(new_vdom, parent_el, index)
+          RubyWasmUi::Dom::MountDom.execute(new_vdom, parent_el, index, host_component)
 
           return new_vdom
         end
@@ -23,7 +23,7 @@ module RubyWasmUi
           patch_text(old_vdom, new_vdom)
           return new_vdom # return early and skip children patch
         when RubyWasmUi::Vdom::DOM_TYPES[:ELEMENT]
-          patch_element(old_vdom, new_vdom)
+          patch_element(old_vdom, new_vdom, host_component)
         else
           # noop
         end
@@ -61,7 +61,8 @@ module RubyWasmUi
 
       # @param old_vdom [RubyWasmUi::Vdom]
       # @param new_vdom [RubyWasmUi::Vdom]
-      def self.patch_element(old_vdom, new_vdom)
+      # @param host_component [RubyWasmUi::Component, nil]
+      def self.patch_element(old_vdom, new_vdom, host_component)
         el = old_vdom.el
 
         # Extract attributes from oldVdom.props (equivalent to JavaScript destructuring)
@@ -84,7 +85,7 @@ module RubyWasmUi
         patch_attrs(el, old_attrs, new_attrs)
         patch_classes(el, old_class, new_class)
         patch_styles(el, old_style, new_style)
-        new_vdom.listeners = patch_events(el, old_listeners, old_events, new_events)
+        new_vdom.listeners = patch_events(el, old_listeners, old_events, new_events, host_component)
       end
 
       # @param el [JS::Object]
@@ -142,13 +143,13 @@ module RubyWasmUi
       # @param old_events [Hash]
       # @param new_events [Hash]
       # @return [Hash]
-      def self.patch_events(el, old_listeners = {}, old_events = {}, new_events = {})
+      def self.patch_events(el, old_listeners = {}, old_events = {}, new_events = {}, host_component = nil)
         diff = RubyWasmUi::Utils::Objects.diff(old_events || {}, new_events || {})
 
         # Remove old event listeners for removed and updated events
         (diff[:removed] + diff[:updated]).each do |event_name|
           if old_listeners[event_name]
-            el.removeEventListener(event_name, old_listeners[event_name])
+            el.call(:removeEventListener, event_name.to_s, old_listeners[event_name])
           end
         end
 
@@ -160,6 +161,7 @@ module RubyWasmUi
             event_name,
             new_events[event_name],
             el,
+            host_component
           )
           added_listeners[event_name] = listener
         end
