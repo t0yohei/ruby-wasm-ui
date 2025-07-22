@@ -27,7 +27,7 @@ module RubyWasmUi
       @render = self.class.class_variable_get(:@@render)
     end
 
-    attr_reader :state, :props
+    attr_reader :state, :props, :render
 
     # Get VDOM elements
     # @return [Array<JS::Object>]
@@ -35,7 +35,13 @@ module RubyWasmUi
       return [] if @vdom.nil?
 
       if @vdom.type == RubyWasmUi::Vdom::DOM_TYPES[:FRAGMENT]
-        RubyWasmUi::Vdom.extract_children(@vdom).map(&:el)
+        RubyWasmUi::Vdom.extract_children(@vdom).flat_map do |child|
+          if child.type == RubyWasmUi::Vdom::DOM_TYPES[:COMPONENT]
+            child.component.elements
+          else
+            [child.el]
+          end
+        end
       else
         [@vdom.el]
       end
@@ -62,6 +68,13 @@ module RubyWasmUi
     # @param new_state [Hash] New state
     def update_state(new_state)
       @state = @state.merge(new_state)
+      patch
+    end
+
+    # Update props
+    # @param new_props [Hash] New props
+    def update_props(new_props)
+      @props = @props.merge(new_props)
       patch
     end
 

@@ -3,7 +3,8 @@ module RubyWasmUi
     DOM_TYPES = {
       TEXT: 'text',
       ELEMENT: 'element',
-      FRAGMENT: 'fragment'
+      FRAGMENT: 'fragment',
+      COMPONENT: 'component'
     }
 
     # @param tag [String]
@@ -12,21 +13,22 @@ module RubyWasmUi
     # @param type [Symbol]
     # @param value [Object]
     # @return [Vdom]
-    def self.h(tag, props = {}, children = [], type = DOM_TYPES[:ELEMENT], value = nil)
-      new(tag, props, children, type, value)
+    def self.h(tag, props = {}, children = [])
+      type = tag.is_a?(String) ? DOM_TYPES[:ELEMENT] : DOM_TYPES[:COMPONENT]
+      new(tag, props, type, children, nil)
     end
 
     # @param str [String]
     # @return [Vdom]
     def self.h_string(str)
-      vdom = new('', {}, [], DOM_TYPES[:TEXT], str.to_s)
+      vdom = new('', {}, DOM_TYPES[:TEXT], [], str.to_s)
       vdom
     end
 
     # @param vdoms [Array]
     # @return [Vdom]
     def self.h_fragment(vdoms)
-      new('', {}, map_text_nodes(RubyWasmUi::Utils::Arrays.without_nulls(vdoms)), DOM_TYPES[:FRAGMENT], nil)
+      new('', {}, DOM_TYPES[:FRAGMENT], map_text_nodes(RubyWasmUi::Utils::Arrays.without_nulls(vdoms)), nil)
     end
 
     # @param type [Symbol]
@@ -34,7 +36,7 @@ module RubyWasmUi
     # @param children [Array]
     # @param value [Object]
     # @return [Vdom]
-    def initialize(tag, props, children, type, value)
+    def initialize(tag, props, type, children, value)
       @tag = tag
       @props = props
       @children = self.class.map_text_nodes(RubyWasmUi::Utils::Arrays.without_nulls(children))
@@ -42,10 +44,11 @@ module RubyWasmUi
       @value = value.to_s
       @el = nil
       @listeners = {}
+      @component = nil
     end
 
     attr_reader :tag, :props, :children, :type, :value
-    attr_accessor :el, :listeners
+    attr_accessor :el, :listeners, :component
 
     private
 

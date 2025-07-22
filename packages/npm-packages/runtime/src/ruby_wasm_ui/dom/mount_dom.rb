@@ -13,6 +13,8 @@ module RubyWasmUi
           create_element_node(vdom, parent_el, index, hostComponent)
         when RubyWasmUi::Vdom::DOM_TYPES[:FRAGMENT]
           create_fragment_nodes(vdom, parent_el, index, hostComponent)
+        when RubyWasmUi::Vdom::DOM_TYPES[:COMPONENT]
+          create_component_node(vdom, parent_el, index, hostComponent)
         else
           raise "Can't mount DOM of type: #{vdom.type}"
         end
@@ -82,6 +84,21 @@ module RubyWasmUi
         vdom.children&.each_with_index do |child, i|
           execute(child, parent_el, index ? index + i : nil, hostComponent)
         end
+      end
+
+      # @param vdom [RubyWasmUi::Vdom]
+      # @param parent_el [JS::Object] Parent element
+      # @param index [Integer, nil] Index position to insert at
+      # @param host_component [RubyWasmUi::Component, nil] Host component
+      # @return [void]
+      def self.create_component_node(vdom, parent_el, index, host_component)
+        component_class = vdom.tag
+        props = vdom.props
+        component = component_class.new(props)
+
+        component.mount(parent_el, index)
+        vdom.component = component
+        vdom.el = component.first_element
       end
     end
   end
