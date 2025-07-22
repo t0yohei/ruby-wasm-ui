@@ -1,13 +1,13 @@
 require "js"
 
-ListItem = RubyWasmUi::Component.define_component(
+ListItem = RubyWasmUi.define_component(
   render: ->(component) {
     todo = component.props[:todo]
     RubyWasmUi::Vdom.h("li", {}, [todo])
   }
 )
 
-List = RubyWasmUi::Component.define_component(
+List = RubyWasmUi.define_component(
   render: ->(component) {
     todos = component.props[:todos]
     list_items = todos.map { |todo| RubyWasmUi::Vdom.h(ListItem, { todo: todo }) }

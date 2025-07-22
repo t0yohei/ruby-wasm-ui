@@ -1,23 +1,29 @@
 module RubyWasmUi
-  class Component
-    def self.define_component(render:, state: nil, methods: {})
-      Class.new(Component) do
-        self.class_variable_set(:@@state, state)
-        self.class_variable_set(:@@render, render)
 
-        # Add methods to the component
-        methods.each do |method_name, method_proc|
-          # Check if method already exists
-          if method_defined?(method_name) || private_method_defined?(method_name)
-            raise "Method \"#{method_name}()\" already exists in the component."
-          end
+  # Define a new component class
+  # @param render [Proc] The render function
+  # @param state [Proc, nil] The state function
+  # @param methods [Hash] Additional methods to add to the component
+  # @return [Class] The new component class
+  def self.define_component(render:, state: nil, methods: {})
+    Class.new(Component) do
+      self.class_variable_set(:@@state, state)
+      self.class_variable_set(:@@render, render)
 
-          # Define the method dynamically
-          define_method(method_name, method_proc)
+      # Add methods to the component
+      methods.each do |method_name, method_proc|
+        # Check if method already exists
+        if method_defined?(method_name) || private_method_defined?(method_name)
+          raise "Method \"#{method_name}()\" already exists in the component."
         end
+
+        # Define the method dynamically
+        define_method(method_name, method_proc)
       end
     end
+  end
 
+  class Component
     def initialize(props = {})
       @props = props
       @is_mounted = false
