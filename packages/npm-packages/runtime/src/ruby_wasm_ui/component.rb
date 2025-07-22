@@ -2,8 +2,8 @@ module RubyWasmUi
   class Component
     def self.define_component(render:, state: nil, methods: {})
       Class.new(Component) do
-        @@state = state
-        @@render = render
+        self.class_variable_set(:@@state, state)
+        self.class_variable_set(:@@render, render)
 
         # Add methods to the component
         methods.each do |method_name, method_proc|
@@ -23,8 +23,8 @@ module RubyWasmUi
       @is_mounted = false
       @vdom = nil
       @host_el = nil
-      @state = @@state ? @@state.call(@props) : {}
-      @render = @@render
+      @state = self.class.class_variable_get(:@@state) ? self.class.class_variable_get(:@@state).call(@props) : {}
+      @render = self.class.class_variable_get(:@@render)
     end
 
     attr_reader :state, :props
