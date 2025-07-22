@@ -93,8 +93,8 @@ module RubyWasmUi
       # @return [void]
       def self.create_component_node(vdom, parent_el, index, host_component)
         component_class = vdom.tag
-        props = vdom.props
-        component = component_class.new(props)
+        extracted = RubyWasmUi::Utils::Props.extract_props_and_events(vdom)
+        component = component_class.new(extracted[:props], extracted[:events], host_component)
 
         component.mount(parent_el, index)
         vdom.component = component

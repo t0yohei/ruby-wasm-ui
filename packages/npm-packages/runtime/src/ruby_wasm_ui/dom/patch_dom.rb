@@ -225,7 +225,7 @@ module RubyWasmUi
       # @return [void]
       def self.patch_component(old_vdom, new_vdom)
         component = old_vdom.component
-        props = new_vdom.props
+        props = RubyWasmUi::Utils::Props.extract_props_and_events(new_vdom)[:props]
 
         component.update_props(props)
 

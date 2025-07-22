@@ -24,16 +24,20 @@ module RubyWasmUi
   end
 
   class Component
-    def initialize(props = {})
+    def initialize(props = {}, event_handlers = {}, parent_component = nil)
       @props = props
       @is_mounted = false
       @vdom = nil
       @host_el = nil
       @state = self.class.class_variable_get(:@@state) ? self.class.class_variable_get(:@@state).call(@props) : {}
       @render = self.class.class_variable_get(:@@render)
+      @event_handlers = event_handlers
+      @parent_component = parent_component
+      @dispatcher = RubyWasmUi::Dispatcher.new
+      @subscriptions = []
     end
 
-    attr_reader :state, :props, :render
+    attr_reader :state, :props
 
     # Get VDOM elements
     # @return [Array<JS::Object>]
@@ -103,6 +107,7 @@ module RubyWasmUi
 
       @vdom = render
       RubyWasmUi::Dom::MountDom.execute(@vdom, host_el, index, self)
+      wire_event_handlers
 
       @host_el = host_el
       @is_mounted = true
@@ -113,10 +118,19 @@ module RubyWasmUi
       raise "Component is not mounted" unless @is_mounted
 
       RubyWasmUi::Dom::DestroyDom.execute(@vdom)
+      @subscriptions.each { |unsubscription| unsubscription.call }
 
       @vdom = nil
       @host_el = nil
       @is_mounted = false
+      @subscriptions = []
+    end
+
+    # Emit an event
+    # @param event_name [String] Event name
+    # @param payload [Object] Event payload
+    def emit(event_name, payload)
+      @dispatcher.dispatch(event_name, payload) if @dispatcher
     end
 
     private
@@ -127,6 +141,27 @@ module RubyWasmUi
 
       vdom = render
       @vdom = RubyWasmUi::Dom::PatchDom.execute(@vdom, vdom, @host_el, self)
+    end
+
+    # Wire event handlers
+    def wire_event_handlers
+      @subscriptions = @event_handlers.map do |event_name, handler|
+        wire_event_handler(event_name, handler)
+      end
+    end
+
+    # Wire a single event handler
+    # @param event_name [String] Event name
+    # @param handler [Proc] Event handler
+    # @return [Object] Subscription object
+    def wire_event_handler(event_name, handler)
+      handler_proc = if @parent_component
+        proc { |payload| @parent_component.instance_exec(payload, &handler) }
+      else
+        proc { |payload| handler.call(payload) }
+      end
+
+      @dispatcher.subscribe(event_name, handler_proc)
     end
   end
 end
