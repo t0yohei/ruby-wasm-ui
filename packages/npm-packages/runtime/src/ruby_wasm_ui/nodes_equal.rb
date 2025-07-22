@@ -17,6 +17,14 @@ module RubyWasmUi
         return tag_one == tag_two
       end
 
+      # MEMO: not sure if this is correct
+      if node_one.type == RubyWasmUi::Vdom::DOM_TYPES[:COMPONENT]
+        tag_one = node_one.tag
+        tag_two = node_two.tag
+
+        return tag_one == tag_two
+      end
+
       if node_one.type == RubyWasmUi::Vdom::DOM_TYPES[:TEXT]
         value_one = node_one.value
         value_two = node_two.value

@@ -2,7 +2,7 @@
 
 require 'spec_helper'
 
-RSpec.describe RubyWasmUi::Component do
+RSpec.describe RubyWasmUi do
   describe '.define_component' do
     let(:render) { ->(component) { 'rendered content' } }
     let(:state) { ->(props) { { count: 0 } } }
@@ -14,7 +14,7 @@ RSpec.describe RubyWasmUi::Component do
           get_double_count: -> { @state[:count] * 2 }
         }
 
-        component_class = described_class.define_component(
+        component_class = RubyWasmUi.define_component(
           render:,
           state:,
           methods: custom_methods
@@ -38,7 +38,7 @@ RSpec.describe RubyWasmUi::Component do
         }
 
         expect {
-          described_class.define_component(
+          RubyWasmUi.define_component(
             render:,
             methods: custom_methods
           )
@@ -51,7 +51,7 @@ RSpec.describe RubyWasmUi::Component do
         }
 
         expect {
-          described_class.define_component(
+          RubyWasmUi.define_component(
             render:,
             methods: custom_methods
           )
@@ -59,7 +59,7 @@ RSpec.describe RubyWasmUi::Component do
       end
 
       it 'works correctly with empty methods hash' do
-        component_class = described_class.define_component(
+        component_class = RubyWasmUi.define_component(
           render:,
           methods: {}
         )
@@ -73,7 +73,7 @@ RSpec.describe RubyWasmUi::Component do
           'string_method' => -> { 'method called' }
         }
 
-        component_class = described_class.define_component(
+        component_class = RubyWasmUi.define_component(
           render:,
           methods: custom_methods
         )
@@ -86,7 +86,7 @@ RSpec.describe RubyWasmUi::Component do
 
     context 'without methods parameter' do
       it 'creates component successfully when methods is not provided' do
-        component_class = described_class.define_component(render:)
+        component_class = RubyWasmUi.define_component(render:)
 
         instance = component_class.new
         expect(instance).to be_a(RubyWasmUi::Component)

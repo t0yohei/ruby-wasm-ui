@@ -1,6 +1,6 @@
 require "js"
 
-counter = RubyWasmUi::Component.define_component(
+counter = RubyWasmUi.define_component(
   methods: {
     increment: -> {
       update_state(count: state[:count] + 1)

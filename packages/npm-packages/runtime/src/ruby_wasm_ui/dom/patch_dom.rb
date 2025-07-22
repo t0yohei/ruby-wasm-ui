@@ -24,6 +24,8 @@ module RubyWasmUi
           return new_vdom # return early and skip children patch
         when RubyWasmUi::Vdom::DOM_TYPES[:ELEMENT]
           patch_element(old_vdom, new_vdom, host_component)
+        when RubyWasmUi::Vdom::DOM_TYPES[:COMPONENT]
+          patch_component(old_vdom, new_vdom)
         else
           # noop
         end
@@ -216,6 +218,19 @@ module RubyWasmUi
           # string case
           classes.to_s.split(/\s+/).select { |c| RubyWasmUi::Utils::Strings.is_not_empty_string(c) }
         end
+      end
+
+      # @param old_vdom [RubyWasmUi::Vdom]
+      # @param new_vdom [RubyWasmUi::Vdom]
+      # @return [void]
+      def self.patch_component(old_vdom, new_vdom)
+        component = old_vdom.component
+        props = RubyWasmUi::Utils::Props.extract_props_and_events(new_vdom)[:props]
+
+        component.update_props(props)
+
+        new_vdom.component = component
+        new_vdom.el = component.first_element
       end
     end
   end
