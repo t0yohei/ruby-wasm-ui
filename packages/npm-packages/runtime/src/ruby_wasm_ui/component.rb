@@ -67,14 +67,20 @@ module RubyWasmUi
     # Update state
     # @param new_state [Hash] New state
     def update_state(new_state)
-      @state = @state.merge(new_state)
+      merged_state = @state.merge(new_state)
+      return if @state == merged_state
+
+      @state = merged_state
       patch
     end
 
     # Update props
     # @param new_props [Hash] New props
     def update_props(new_props)
-      @props = @props.merge(new_props)
+      merged_props = @props.merge(new_props)
+      return if @props == merged_props
+
+      @props = merged_props
       patch
     end
 
