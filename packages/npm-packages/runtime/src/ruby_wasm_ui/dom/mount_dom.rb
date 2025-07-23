@@ -77,7 +77,7 @@ module RubyWasmUi
         attrs = extracted[:props]
 
         vdom.listeners = Events.add_event_listeners(el, events, hostComponent) if events
-        Attributes.new(el).set_attributes(attrs) if attrs.any?
+        RubyWasmUi::Dom::Attributes.set_attributes(el, attrs) if attrs.any?
       end
 
       def self.create_fragment_nodes(vdom, parent_el, index, hostComponent)

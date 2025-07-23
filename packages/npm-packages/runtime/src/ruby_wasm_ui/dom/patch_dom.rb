@@ -95,14 +95,13 @@ module RubyWasmUi
       # @param new_attrs [Hash]
       def self.patch_attrs(el, old_attrs, new_attrs)
         diff = RubyWasmUi::Utils::Objects.diff(old_attrs, new_attrs)
-        attributes = RubyWasmUi::Dom::Attributes.new(el)
 
         diff[:removed].each do |key|
-          attributes.remove_attribute(key)
+          RubyWasmUi::Dom::Attributes.remove_attribute(el, key)
         end
 
         (diff[:added] + diff[:updated]).each do |key|
-          attributes.set_attribute(key, new_attrs[key])
+          RubyWasmUi::Dom::Attributes.set_attribute(el, key, new_attrs[key])
         end
       end
 
@@ -129,14 +128,13 @@ module RubyWasmUi
       # @param new_style [String, Array]
       def self.patch_styles(el, old_style = {}, new_style = {})
         diff = RubyWasmUi::Utils::Objects.diff(old_style || {}, new_style || {})
-        attributes = RubyWasmUi::Dom::Attributes.new(el)
 
         diff[:removed].each do |key|
-          attributes.remove_attribute(key)
+          RubyWasmUi::Dom::Attributes.remove_style(el, key)
         end
 
         (diff[:added] + diff[:updated]).each do |key|
-          attributes.set_attribute(key, new_style[key])
+          RubyWasmUi::Dom::Attributes.set_style(el, key, new_style[key])
         end
       end
 
