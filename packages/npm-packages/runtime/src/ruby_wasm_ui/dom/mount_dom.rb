@@ -58,24 +58,26 @@ module RubyWasmUi
 
       def self.create_element_node(vdom, parent_el, index, hostComponent)
         element = JS.global[:document].createElement(vdom.tag)
-        add_props(element, vdom.props, vdom, hostComponent)
+        add_props(element, vdom, hostComponent)
         vdom.el = element
 
         vdom.children&.each do |child|
-          execute(child, element, index, hostComponent)
+          execute(child, element, nil, hostComponent)
         end
 
         insert(element, parent_el, index)
       end
 
-      def self.add_props(el, props, vdom, hostComponent)
-        return unless props
-
-        events = props[:on]
-        attrs = props.reject { |key, _| key == :on }
+      # @param el [JS::Object] Element to add props to
+      # @param vdom [RubyWasmUi::Vdom] VDOM node
+      # @param hostComponent [RubyWasmUi::Component, nil] Host component
+      def self.add_props(el, vdom, hostComponent)
+        extracted = RubyWasmUi::Utils::Props.extract_props_and_events(vdom)
+        events = extracted[:events]
+        attrs = extracted[:props]
 
         vdom.listeners = Events.add_event_listeners(el, events, hostComponent) if events
-        Attributes.new(el).set_attributes(attrs) if attrs.any?
+        RubyWasmUi::Dom::Attributes.set_attributes(el, attrs) if attrs.any?
       end
 
       def self.create_fragment_nodes(vdom, parent_el, index, hostComponent)

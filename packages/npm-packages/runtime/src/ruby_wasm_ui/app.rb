@@ -1,65 +1,53 @@
 module RubyWasmUi
   class App
-    def self.create(state:, view:, actions: {})
-      new(state, view, actions)
+    # @param root_component [Class]
+    # @param props [Hash]
+    # @return [App]
+    def self.create(root_component, props = {})
+      new(root_component, props)
     end
 
-    # @param state [Object]
-    # @param view [Proc]
-    # @param actions [Hash]
-    def initialize(state, view, actions)
-      @state = state
-      @view = view
-      @actions = actions
+    # @param root_component [Class]
+    # @param props [Hash]
+    def initialize(root_component, props)
+      @root_component = root_component
+      @props = props
       @parent_el = nil
+      @is_mounted = false
       @vdom = nil
-      @dispatcher = Dispatcher.new
-      @subscriptions = []
-
-      setup_subscriptions
     end
 
     # @param parent_el [Element]
     # @return [void]
     def mount(parent_el)
+      if @is_mounted
+        raise "The application is already mounted"
+      end
+
       @parent_el = parent_el
-      @vdom = @view.call(@state, method(:emit))
+      @vdom = RubyWasmUi::Vdom.h(@root_component, @props)
       RubyWasmUi::Dom::MountDom.execute(@vdom, @parent_el)
+
+      @is_mounted = true
     end
 
     # @return [void]
     def unmount
-      RubyWasmUi::Dom::DestroyDom.execute(@vdom) if @vdom
-      @vdom = nil
-      @subscriptions.each(&:call)
+      unless @is_mounted
+        raise "The application is not mounted"
+      end
+
+      RubyWasmUi::Dom::DestroyDom.execute(@vdom)
+      reset
     end
 
     private
 
-    # @return [Array<Proc>]
-    def setup_subscriptions
-      @subscriptions << @dispatcher.after_every_command(method(:render_app))
-
-      @actions.each do |action_name, action|
-        handler = ->(payload) {
-          @state = action.call(@state, payload)
-        }
-        @subscriptions << @dispatcher.subscribe(action_name, handler)
-      end
-    end
-
     # @return [void]
-    def render_app
-      new_vdom = @view.call(@state, method(:emit))
-      @vdom = RubyWasmUi::Dom::PatchDom.execute(@vdom, new_vdom, @parent_el)
-    end
-
-    # @param event_name [String]
-    # @param payload [Object]
-    # @return [void]
-    def emit(event_name, payload = nil)
-      @dispatcher.dispatch(event_name, payload)
-      return nil
+    def reset
+      @parent_el = nil
+      @is_mounted = false
+      @vdom = nil
     end
   end
 end
