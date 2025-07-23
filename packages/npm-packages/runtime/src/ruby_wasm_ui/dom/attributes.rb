@@ -59,6 +59,8 @@ module RubyWasmUi
           remove_attribute(element, name)
         elsif name.to_s.start_with?("data-")
           element.setAttribute(name, value)
+        elsif name.to_s == "for"
+          element[:htmlFor] = value
         else
           element[name] = value
         end
