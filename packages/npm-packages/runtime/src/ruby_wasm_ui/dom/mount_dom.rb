@@ -62,7 +62,7 @@ module RubyWasmUi
         vdom.el = element
 
         vdom.children&.each do |child|
-          execute(child, element, index, hostComponent)
+          execute(child, element, nil, hostComponent)
         end
 
         insert(element, parent_el, index)
