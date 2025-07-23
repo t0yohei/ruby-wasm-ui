@@ -12,17 +12,20 @@ module RubyWasmUi
 
       if node_one.type == RubyWasmUi::Vdom::DOM_TYPES[:ELEMENT]
         tag_one = node_one.tag
+        key_one = node_one.props[:key]
         tag_two = node_two.tag
+        key_two = node_two.props[:key]
 
-        return tag_one == tag_two
+        return tag_one == tag_two && key_one == key_two
       end
 
-      # MEMO: not sure if this is correct
       if node_one.type == RubyWasmUi::Vdom::DOM_TYPES[:COMPONENT]
-        tag_one = node_one.tag
-        tag_two = node_two.tag
+        component_one = node_one.tag
+        key_one = node_one.props[:key]
+        component_two = node_two.tag
+        key_two = node_two.props[:key]
 
-        return tag_one == tag_two
+        return component_one == component_two && key_one == key_two
       end
 
       if node_one.type == RubyWasmUi::Vdom::DOM_TYPES[:TEXT]

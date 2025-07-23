@@ -118,7 +118,9 @@ module RubyWasmUi
       raise "Component is not mounted" unless @is_mounted
 
       RubyWasmUi::Dom::DestroyDom.execute(@vdom)
-      @subscriptions.each { |unsubscription| unsubscription.call }
+
+      # Safely handle subscriptions, filtering out nil values
+      @subscriptions.compact.each { |unsubscription| unsubscription.call }
 
       @vdom = nil
       @host_el = nil
@@ -156,12 +158,15 @@ module RubyWasmUi
     # @return [Object] Subscription object
     def wire_event_handler(event_name, handler)
       handler_proc = if @parent_component
-        proc { |payload| @parent_component.instance_exec(payload, &handler) }
+        ->(payload) { @parent_component.instance_exec(payload, &handler) }
       else
-        proc { |payload| handler.call(payload) }
+        ->(payload) { handler.call(payload) }
       end
 
-      @dispatcher.subscribe(event_name, handler_proc)
+      subscription = @dispatcher.subscribe(event_name, handler_proc)
+
+      # Ensure we always return a callable unsubscription function
+      subscription || -> { puts "Warning: No-op unsubscription for #{event_name}" }
     end
   end
 end
