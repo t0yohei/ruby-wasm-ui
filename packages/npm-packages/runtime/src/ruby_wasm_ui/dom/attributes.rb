@@ -15,8 +15,14 @@ module RubyWasmUi
         end
 
         if style
-          style.each do |name, value|
-            set_style(element, name, value)
+          if style.is_a?(String)
+            # Handle string-based style attributes (e.g., "width: 300px; height: 300px;")
+            set_style_string(element, style)
+          else
+            # Handle hash-based style attributes
+            style.each do |name, value|
+              set_style(element, name, value)
+            end
           end
         end
 
@@ -36,6 +42,13 @@ module RubyWasmUi
         when Array
           element[:classList].add(*class_name)
         end
+      end
+
+      # @param element [JS::Object]
+      # @param style_string [String]
+      def set_style_string(element, style_string)
+        # Set the entire style string at once
+        element[:style][:cssText] = style_string
       end
 
       # @param element [JS::Object]
