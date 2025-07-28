@@ -15,7 +15,7 @@ List = RubyWasmUi.define_component(
   }
 )
 
+# Create and mount the app
+app = RubyWasmUi::App.create(List, { todos: ['foo', 'bar', 'baz'] })
 app_element = JS.global[:document].getElementById("app")
-todos = ['foo', 'bar', 'baz']
-list = List.new({ todos: todos })
-list.mount(app_element)
+app.mount(app_element)
