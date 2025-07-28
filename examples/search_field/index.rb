@@ -30,6 +30,7 @@ SearchDemo = RubyWasmUi.define_component(
   }
 )
 
+# Create and mount the app
+app = RubyWasmUi::App.create(SearchDemo)
 app_element = JS.global[:document].getElementById("app")
-search_demo = SearchDemo.new({}, {})
-search_demo.mount(app_element)
+app.mount(app_element)

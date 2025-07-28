@@ -78,6 +78,7 @@ random_cocktail = RubyWasmUi.define_component(
   }
 )
 
+# Create and mount the app
+app = RubyWasmUi::App.create(random_cocktail)
 app_element = JS.global[:document].getElementById("app")
-app = random_cocktail.new
 app.mount(app_element)

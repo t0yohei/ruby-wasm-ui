@@ -23,6 +23,7 @@ counter = RubyWasmUi.define_component(
   }
 )
 
+# Create and mount the app
+app = RubyWasmUi::App.create(counter)
 app_element = JS.global[:document].getElementById("app")
-component = counter.new
-component.mount(app_element)
+app.mount(app_element)
