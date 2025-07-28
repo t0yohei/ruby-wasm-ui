@@ -3,14 +3,16 @@ require "js"
 # SearchField component definition
 SearchField = RubyWasmUi.define_component(
   render: ->(component) {
-    RubyWasmUi::Vdom.h('input', {
-      type: 'text',
-      placeholder: 'Search...',
-      value: component.props[:value],
-      on: {
-        input: ->(event) { component.emit('search', event[:target][:value].to_s) }
-      }
-    })
+    template = <<~HTML
+      <input
+        type="text"
+        placeholder="Search..."
+        value="{component.props[:value]}"
+        on="{input: ->(event) { component.emit('search', event[:target][:value].to_s) }}" />
+    HTML
+
+    vdom_code = RubyWasmUi::Template::Parser.parse(template)
+    eval("[#{vdom_code}]")[0]
   }
 )
 
@@ -20,16 +22,19 @@ SearchDemo = RubyWasmUi.define_component(
     { search_term: '' }
   },
   render: ->(component) {
-    RubyWasmUi::Vdom.h_fragment([
-      RubyWasmUi::Vdom.h('div', {}, [
-        RubyWasmUi::Vdom.h('h2', {}, ['Search Demo']),
-        RubyWasmUi::Vdom.h(SearchField, { on: { search: ->(search_term) { component.update_state({ search_term: search_term }) } }, value: component.state[:search_term] }, []),
-        RubyWasmUi::Vdom.h('p', {}, ["Current search term: #{component.state[:search_term]}"])
-      ])
-    ])
+    template = <<~HTML
+      <div>
+        <h2>Search Demo</h2>
+        <SearchField on="{search: ->(search_term) { component.update_state({ search_term: search_term }) }}" value="{component.state[:search_term]}"></SearchField>
+        <p>Current search term: {component.state[:search_term]}</p>
+      </div>
+    HTML
+
+    vdom_code = RubyWasmUi::Template::Parser.parse(template)
+    eval("[#{vdom_code}]")[0]
   }
 )
 
 app_element = JS.global[:document].getElementById("app")
-search_demo = SearchDemo.new({}, {})
-search_demo.mount(app_element)
+app = RubyWasmUi::App.create(SearchDemo)
+app.mount(app_element)
