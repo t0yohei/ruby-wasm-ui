@@ -44,7 +44,7 @@ module RubyWasmUi
       # @return [Integer, nil]
       def self.find_index_in_parent(parent_el, el)
         index = parent_el[:childNodes].to_a.index(el)
-        return nil if index < 0
+        return nil if index.nil? || index < 0
 
         index
       end

@@ -9,17 +9,16 @@ CounterComponent = RubyWasmUi.define_component(
 
   # Render the counter component
   render: ->(component) {
-    state = component.state
+    template = <<~HTML
+      <div>
+        <div>{component.state[:count]}</div>
+        <button on="{click: ->(_e) { component.increment }}">Increment</button>
+        <button on="{click: ->(_e) { component.decrement }}">Decrement</button>
+      </div>
+    HTML
 
-    RubyWasmUi::Vdom.h("div", {}, [
-      RubyWasmUi::Vdom.h("div", {}, [state[:count].to_s]),
-      RubyWasmUi::Vdom.h("button", {
-        on: { click: ->(_e) { component.increment } }
-      }, ["Increment"]),
-      RubyWasmUi::Vdom.h("button", {
-        on: { click: ->(_e) { component.decrement } }
-      }, ["Decrement"])
-    ])
+    vdom_code = RubyWasmUi::Template::Parser.parse(template)
+    eval(vdom_code)
   },
 
   # Component methods
