@@ -1,22 +1,30 @@
 require "js"
 
 Counter = RubyWasmUi.define_component(
-  methods: {
-    increment: -> {
-      update_state(count: state[:count] + 1)
+  state: ->(props) {
+    {
+      count: 0
     }
   },
-  state: -> (props) { { count: 0 } },
-  render: -> (component) {
+
+  render: ->(component) {
     template = <<~HTML
       <div>
-        <p>Count: {component.state[:count]}</p>
-        <button on="{click: ->(e) { component.increment }}">Increment</button>
+        <h1>Counter</h1>
+        <p>{component.state[:count]}</p>
+        <button on="{click: ->(_e) { component.increment }}">+</button>
       </div>
     HTML
-    
+
     vdom_code = RubyWasmUi::Template::Parser.parse(template)
-    eval("[#{vdom_code}]")[0]
+    eval(vdom_code)
+  },
+
+  methods: {
+    increment: ->() {
+      state = self.state
+      self.update_state(count: state[:count] + 1)
+    }
   }
 )
 

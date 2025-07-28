@@ -12,7 +12,7 @@ SearchField = RubyWasmUi.define_component(
     HTML
 
     vdom_code = RubyWasmUi::Template::Parser.parse(template)
-    eval("[#{vdom_code}]")[0]
+    eval(vdom_code)
   }
 )
 
@@ -31,7 +31,7 @@ SearchDemo = RubyWasmUi.define_component(
     HTML
 
     vdom_code = RubyWasmUi::Template::Parser.parse(template)
-    eval("[#{vdom_code}]")[0]
+    eval(vdom_code)
   }
 )
 

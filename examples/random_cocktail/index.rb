@@ -1,6 +1,6 @@
 require "js"
 
-random_cocktail = RubyWasmUi.define_component(
+RandomCocktail = RubyWasmUi.define_component(
   state: ->(props) {
     {
       is_loading: false,
@@ -13,52 +13,48 @@ random_cocktail = RubyWasmUi.define_component(
     cocktail = component.state[:cocktail]
 
     if is_loading
-      return RubyWasmUi::Vdom.h_fragment([
-        RubyWasmUi::Vdom.h("p", {}, ["Loading..."])
-      ])
+      template = <<~HTML
+        <p>Loading...</p>
+      HTML
+
+      vdom_code = RubyWasmUi::Template::Parser.parse(template)
+      return eval(vdom_code)
     end
 
     if cocktail.nil?
-      return RubyWasmUi::Vdom.h_fragment([
-        RubyWasmUi::Vdom.h("button", {
-          on: {
-            click: ->(e) { component.fetch_cocktail },
-          },
-        }, [
-          "Get a cocktail"
-        ])
-      ])
+      template = <<~HTML
+        <button on="{click: ->(e) { component.fetch_cocktail }}">
+          Get a cocktail
+        </button>
+      HTML
+
+      vdom_code = RubyWasmUi::Template::Parser.parse(template)
+      return eval(vdom_code)
     end
 
     str_drink = cocktail["strDrink"]
     str_drink_thumb = cocktail["strDrinkThumb"]
     str_instructions = cocktail["strInstructions"]
 
-    RubyWasmUi::Vdom.h_fragment([
-      RubyWasmUi::Vdom.h("h1", {}, [str_drink]),
-      RubyWasmUi::Vdom.h("p", {}, [str_instructions]),
-      RubyWasmUi::Vdom.h("img", {
-        src: str_drink_thumb,
-        alt: str_drink,
-        style: {
-          width: "300px",
-          height: "300px"
-        }
-      }, []),
-      RubyWasmUi::Vdom.h(
-        "button",
-        {
-          on: {
-            click: ->(e) { component.fetch_cocktail },
-          },
-          style: {
-            display: "block",
-            margin: "1em auto"
-          }
-        },
-        ["Get another cocktail"]
-      )
-    ])
+    # Generate HTML with actual values substituted
+    cocktail_html = <<~HTML
+      <div>
+        <h1>#{str_drink}</h1>
+        <p>#{str_instructions}</p>
+        <img
+          src="#{str_drink_thumb}"
+          alt="#{str_drink}"
+          style="width: 300px; height: 300px;" />
+        <button
+          on="{click: ->(e) { component.fetch_cocktail }}"
+          style="display: block; margin: 1em auto;">
+          Get another cocktail
+        </button>
+      </div>
+    HTML
+
+    vdom_code = RubyWasmUi::Template::Parser.parse(cocktail_html)
+    eval(vdom_code)
   },
 
   methods: {
@@ -66,18 +62,19 @@ random_cocktail = RubyWasmUi.define_component(
       # Set loading state
       update_state(is_loading: true, cocktail: nil)
 
-      Fiber.new do
-        response = JS.global.fetch("https://www.thecocktaildb.com/api/json/v1/1/random.php").await
-        response.call(:json).then(->(data) {
-          update_state(is_loading: false, cocktail: data[:drinks][0])
-        }).catch(->(error) {
-          update_state(is_loading: false, cocktail: nil)
-        })
-      end.transfer
+      # Use Promise directly
+      JS.global.fetch("https://www.thecocktaildb.com/api/json/v1/1/random.php").then(->(response) {
+        response.call(:json)
+      }).then(->(data) {
+        cocktail_data = data[:drinks][0]
+        update_state(is_loading: false, cocktail: cocktail_data)
+      }).catch(->(error) {
+        update_state(is_loading: false, cocktail: nil)
+      })
     }
   }
 )
 
 app_element = JS.global[:document].getElementById("app")
-app = random_cocktail.new
+app = RubyWasmUi::App.create(RandomCocktail)
 app.mount(app_element)

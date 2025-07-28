@@ -2,20 +2,34 @@ require "js"
 
 ListItem = RubyWasmUi.define_component(
   render: ->(component) {
-    todo = component.props[:todo]
-    RubyWasmUi::Vdom.h("li", {}, [todo])
+    template = <<~HTML
+      <li>{component.props[:todo]}</li>
+    HTML
+
+    vdom_code = RubyWasmUi::Template::Parser.parse(template)
+    eval(vdom_code)
   }
 )
 
 List = RubyWasmUi.define_component(
   render: ->(component) {
+    # Generate the full HTML including the ul and li elements
     todos = component.props[:todos]
-    list_items = todos.map { |todo| RubyWasmUi::Vdom.h(ListItem, { todo: todo }) }
-    RubyWasmUi::Vdom.h("ul", {}, list_items)
+
+    # Create the complete list HTML
+    list_html = "<ul>"
+    todos.each do |todo|
+      list_html += "<li>#{todo}</li>"
+    end
+    list_html += "</ul>"
+
+    # Parse the complete HTML structure
+    vdom_code = RubyWasmUi::Template::Parser.parse(list_html)
+    eval(vdom_code)
   }
 )
 
 app_element = JS.global[:document].getElementById("app")
 todos = ['foo', 'bar', 'baz']
-list = List.new({ todos: todos })
-list.mount(app_element)
+app = RubyWasmUi::App.create(List, { todos: todos })
+app.mount(app_element)
