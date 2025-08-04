@@ -75,6 +75,10 @@ random_cocktail = RubyWasmUi.define_component(
         })
       end.transfer
     }
+  },
+
+  on_mounted: ->(component) {
+    component.fetch_cocktail
   }
 )
 
