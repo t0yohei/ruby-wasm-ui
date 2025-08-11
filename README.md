@@ -10,6 +10,7 @@ A modern web frontend framework for Ruby using [ruby.wasm](https://github.com/ru
 - **Virtual DOM**: Efficient DOM updates using a virtual DOM implementation
 - **Event Handling**: Intuitive event system with Ruby lambdas
 - **Component Architecture**: Build reusable components with clean separation of concerns
+- **Lifecycle Hooks**: Manage component lifecycle with hooks like `on_mounted`
 - **Ruby Syntax**: Write frontend applications using Ruby instead of JavaScript
 
 ## Quick Start
@@ -85,6 +86,52 @@ app = RubyWasmUi::App.create(CounterComponent)
 app_element = JS.global[:document].getElementById("app")
 app.mount(app_element)
 ```
+
+## Lifecycle Hooks
+
+Components support lifecycle hooks to execute code at specific points in a component's lifecycle:
+
+```ruby
+RandomCocktailComponent = RubyWasmUi.define_component(
+  state: ->(props) {
+    { cocktail: nil }
+  },
+
+  methods: {
+    fetch_cocktail: -> {
+      # Use Fiber for asynchronous API call
+      Fiber.new do
+        response = JS.global.fetch("https://www.thecocktaildb.com/api/json/v1/1/random.php").await
+        response.call(:json).then(->(data) {
+          update_state(cocktail: data[:drinks][0])
+        })
+      end.transfer
+    }
+  },
+
+  # Called after the component is mounted to the DOM
+  on_mounted: ->(component) {
+    component.fetch_cocktail
+  },
+
+  render: ->(component) {
+    cocktail = component.state[:cocktail]
+
+    if cocktail.nil?
+      RubyWasmUi::Vdom.h("div", {}, ["Loading..."])
+    else
+      RubyWasmUi::Vdom.h("div", {}, [
+        RubyWasmUi::Vdom.h("h2", {}, [cocktail["strDrink"]]),
+        RubyWasmUi::Vdom.h("button", {
+          on: { click: ->(e) { component.fetch_cocktail } }
+        }, ["Get another cocktail"])
+      ])
+    end
+  }
+)
+```
+
+Note: Unlike JavaScript frameworks, asynchronous operations in ruby-wasm-ui are designed to use Ruby's Fiber system rather than Promises.
 
 ## Development
 
