@@ -13,6 +13,10 @@ AppComponent = RubyWasmUi.define_component(
     }
   },
 
+  on_mounted: ->(component) {
+    component.update_state(todos: TodosRepository.read_todos)
+  },
+
   # Render the complete application
   render: ->(component) {
     state = component.state
@@ -42,6 +46,7 @@ AppComponent = RubyWasmUi.define_component(
       todo = { id: rand(10000), text: text }
       state = self.state
       self.update_state(todos: state[:todos] + [todo])
+      TodosRepository.write_todos(state[:todos] + [todo])
     },
 
     # Remove a TODO from the list
@@ -51,6 +56,7 @@ AppComponent = RubyWasmUi.define_component(
       new_todos = state[:todos].dup
       new_todos.delete_at(new_todos.index { |todo| todo[:id] == id })
       self.update_state(todos: new_todos)
+      TodosRepository.write_todos(new_todos)
     },
 
     # Edit an existing TODO
@@ -62,6 +68,7 @@ AppComponent = RubyWasmUi.define_component(
       new_todos = state[:todos].dup
       new_todos[new_todos.index { |todo| todo[:id] == id }] = new_todos[new_todos.index { |todo| todo[:id] == id }].merge(text: edited)
       self.update_state(todos: new_todos)
+      TodosRepository.write_todos(new_todos)
     }
   }
 )
