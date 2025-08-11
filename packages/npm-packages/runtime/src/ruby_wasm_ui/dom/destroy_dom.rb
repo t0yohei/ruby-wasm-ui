@@ -56,6 +56,7 @@ module RubyWasmUi
       # @return [void]
       def self.remove_component_node(vdom)
         vdom.component.unmount
+        RubyWasmUi::Dom::Scheduler.enqueue_job(-> { vdom.component.on_unmounted })
       end
     end
   end

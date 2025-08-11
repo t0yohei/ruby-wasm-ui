@@ -1,14 +1,20 @@
 module RubyWasmUi
 
+  def self.empty_proc
+    -> (component) { }
+  end
+
   # Define a new component class
   # @param render [Proc] The render function
   # @param state [Proc, nil] The state function
   # @param methods [Hash] Additional methods to add to the component
   # @return [Class] The new component class
-  def self.define_component(render:, state: nil, methods: {})
+  def self.define_component(render:, state: nil, on_mounted: empty_proc, on_unmounted: empty_proc, methods: {})
     Class.new(Component) do
       self.class_variable_set(:@@state, state)
       self.class_variable_set(:@@render, render)
+      self.class_variable_set(:@@on_mounted, on_mounted)
+      self.class_variable_set(:@@on_unmounted, on_unmounted)
 
       # Add methods to the component
       methods.each do |method_name, method_proc|
@@ -38,6 +44,14 @@ module RubyWasmUi
     end
 
     attr_reader :state, :props
+
+    def on_mounted
+      self.class.class_variable_get(:@@on_mounted).call(self)
+    end
+
+    def on_unmounted
+      self.class.class_variable_get(:@@on_unmounted).call(self)
+    end
 
     # Get VDOM elements
     # @return [Array<JS::Object>]
