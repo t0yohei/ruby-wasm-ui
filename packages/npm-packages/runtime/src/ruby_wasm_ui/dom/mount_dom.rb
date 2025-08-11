@@ -15,7 +15,7 @@ module RubyWasmUi
           create_fragment_nodes(vdom, parent_el, index, hostComponent)
         when RubyWasmUi::Vdom::DOM_TYPES[:COMPONENT]
           create_component_node(vdom, parent_el, index, hostComponent)
-          vdom.component.on_mounted
+          RubyWasmUi::Dom::Scheduler.enqueue_job(-> { vdom.component.on_mounted })
         else
           raise "Can't mount DOM of type: #{vdom.type}"
         end
