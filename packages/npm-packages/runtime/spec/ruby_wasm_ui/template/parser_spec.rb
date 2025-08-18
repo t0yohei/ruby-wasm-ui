@@ -378,4 +378,135 @@ RSpec.describe RubyWasmUi::Template::Parser do
       expect(result).to eq('')
     end
   end
+
+  describe '.parse_and_eval' do
+    let(:mock_parser) { double('parser') }
+    let(:mock_document) { double('document') }
+    let(:mock_body) { double('body') }
+    let(:mock_child_nodes) { double('child_nodes') }
+    let(:mock_element) { double('element') }
+    let(:mock_vdom) { double('vdom') }
+
+    before do
+      # Mock JS.eval, DOMParser, and JS.global
+      js_mock = double('JS')
+      allow(js_mock).to receive(:eval).with('return new DOMParser()').and_return(mock_parser)
+      allow(js_mock).to receive(:try_convert).with(anything).and_return('template_string')
+      allow(js_mock).to receive(:global).and_return({ Node: { TEXT_NODE: 3, ELEMENT_NODE: 1 } })
+      stub_const('JS', js_mock)
+
+      allow(mock_parser).to receive(:call).with(:parseFromString, 'template_string', 'text/html').and_return(mock_document)
+      allow(mock_document).to receive(:getElementsByTagName).with('body').and_return([mock_body])
+      allow(mock_body).to receive(:[]).with(:childNodes).and_return(mock_child_nodes)
+
+      # Mock element node
+      allow(mock_element).to receive(:[]).with(:nodeType).and_return(1) # ELEMENT_NODE
+      allow(mock_element).to receive(:[]).with(:tagName).and_return('DIV')
+      allow(mock_element).to receive(:[]).with(:attributes).and_return({ length: 0 })
+      allow(mock_element).to receive(:[]).with(:childNodes).and_return([])
+
+      # Mock child nodes as a JavaScript-like array with forEach
+      mock_child_nodes_array = double('child_nodes_array')
+      allow(mock_child_nodes_array).to receive(:forEach) do |&block|
+        block.call(mock_element)
+      end
+      allow(mock_body).to receive(:[]).with(:childNodes).and_return(mock_child_nodes_array)
+
+      # Mock empty child nodes for element
+      mock_empty_nodes = double('empty_nodes')
+      allow(mock_empty_nodes).to receive(:forEach)
+      allow(mock_element).to receive(:[]).with(:childNodes).and_return(mock_empty_nodes)
+    end
+
+    context 'when evaluating a template with variables' do
+      it 'returns a VDOM object with evaluated variables' do
+        template = '<div>{count}</div>'
+        count = 42
+        binding = binding()
+
+        # Mock element node
+        allow(mock_element).to receive(:[]).with(:nodeType).and_return(1) # ELEMENT_NODE
+        allow(mock_element).to receive(:[]).with(:tagName).and_return('DIV')
+        allow(mock_element).to receive(:[]).with(:attributes).and_return({ length: 0 })
+
+        # Mock text node for count
+        mock_text_node = double('text_node')
+        allow(mock_text_node).to receive(:[]).with(:nodeType).and_return(3) # TEXT_NODE
+        allow(mock_text_node).to receive(:[]).with(:nodeValue).and_return('{count}')
+        mock_child_nodes = double('child_nodes')
+        allow(mock_child_nodes).to receive(:forEach) do |&block|
+          block.call(mock_text_node)
+        end
+        allow(mock_element).to receive(:[]).with(:childNodes).and_return(mock_child_nodes)
+
+        # Mock RubyWasmUi::Vdom
+        stub_const('RubyWasmUi::Vdom', mock_vdom)
+        allow(mock_vdom).to receive(:h).with('div', {}, ["42"]).and_return(mock_vdom)
+
+        result = described_class.parse_and_eval(template, binding)
+        expect(result).to eq(mock_vdom)
+      end
+    end
+
+    context 'when evaluating a template with event handlers' do
+      it 'returns a VDOM object with event handlers' do
+        template = '<div on="{click: ->(e) { handle_click.call(e) }}"></div>'
+        handle_click = -> { 'clicked' }
+        binding = binding()
+
+        # Mock element node with attributes
+        allow(mock_element).to receive(:[]).with(:nodeType).and_return(1) # ELEMENT_NODE
+        allow(mock_element).to receive(:[]).with(:tagName).and_return('DIV')
+        mock_attributes = double('attributes')
+        allow(mock_attributes).to receive(:[]).with(:length).and_return(1)
+        mock_attribute = double('attribute')
+        allow(mock_attributes).to receive(:[]).with(0).and_return(mock_attribute)
+        allow(mock_attribute).to receive(:[]).with(:name).and_return('on')
+        allow(mock_attribute).to receive(:[]).with(:value).and_return('{click: ->(e) { handle_click.call(e) }}')
+        allow(mock_element).to receive(:[]).with(:attributes).and_return(mock_attributes)
+
+        # Mock RubyWasmUi::Vdom
+        stub_const('RubyWasmUi::Vdom', mock_vdom)
+        allow(mock_vdom).to receive(:h).with('div', { on: { click: kind_of(Proc) } }, []).and_return(mock_vdom)
+
+        result = described_class.parse_and_eval(template, binding)
+        expect(result).to eq(mock_vdom)
+      end
+    end
+
+    context 'when evaluating a template with components' do
+      let(:mock_component) { double('component') }
+
+      it 'returns a VDOM object with components' do
+        template = '<custom-component>{count}</custom-component>'
+        count = 42
+        binding = binding()
+
+        # Mock component node
+        allow(mock_element).to receive(:[]).with(:nodeType).and_return(1) # ELEMENT_NODE
+        allow(mock_element).to receive(:[]).with(:tagName).and_return('CUSTOM-COMPONENT')
+        allow(mock_element).to receive(:[]).with(:attributes).and_return({ length: 0 })
+
+        # Mock text node for count
+        mock_text_node = double('text_node')
+        allow(mock_text_node).to receive(:[]).with(:nodeType).and_return(3) # TEXT_NODE
+        allow(mock_text_node).to receive(:[]).with(:nodeValue).and_return('{count}')
+        mock_child_nodes = double('child_nodes')
+        allow(mock_child_nodes).to receive(:forEach) do |&block|
+          block.call(mock_text_node)
+        end
+        allow(mock_element).to receive(:[]).with(:childNodes).and_return(mock_child_nodes)
+
+        # Mock component class
+        stub_const('CustomComponent', mock_component)
+
+        # Mock RubyWasmUi::Vdom
+        stub_const('RubyWasmUi::Vdom', mock_vdom)
+        allow(mock_vdom).to receive(:h).with(mock_component, {}, ["42"]).and_return(mock_vdom)
+
+        result = described_class.parse_and_eval(template, binding)
+        expect(result).to eq(mock_vdom)
+      end
+    end
+  end
 end

@@ -154,6 +154,14 @@ module RubyWasmUi
       def get_embed_script(script)
         script.gsub(/\{(.+)\}/) { ::Regexp.last_match(1) }
       end
+
+      # @param template [String]
+      # @param binding [Binding]
+      # @return [RubyWasmUi::Vdom]
+      def parse_and_eval(template, binding)
+        vdom_code = parse(template)
+        eval(vdom_code, binding)
+      end
     end
   end
 end

@@ -3,16 +3,15 @@ require "js"
 # Counter component using the latest component-based API with TemplateParser
 CounterComponent = RubyWasmUi.define_component(
   # Initialize component state
-  state: ->() {
-    { count: 0 }
+  state: ->(props) {
+    { count: props[:count] }
   },
 
   # Render the counter component
   render: ->(component) {
-    template = <<~HTML
+    RubyWasmUi::Template::Parser.parse_and_eval(<<~HTML, binding)
       <div>
         <div>{component.state[:count]}</div>
-
         <button-component
           label="Increment"
           on="{ click_button: -> { component.increment } }">
@@ -23,9 +22,6 @@ CounterComponent = RubyWasmUi.define_component(
         />
       </div>
     HTML
-
-    vdom_code = RubyWasmUi::Template::Parser.parse(template)
-    eval(vdom_code)
 },
 
   # Component methods
@@ -47,23 +43,21 @@ CounterComponent = RubyWasmUi.define_component(
 # Button component - reusable button with click handler
 ButtonComponent = RubyWasmUi.define_component(
   render: ->(component) {
-    template = <<~HTML
+    RubyWasmUi::Template::Parser.parse_and_eval(<<~HTML, binding)
       <button on="{ click: ->(e) { component.emit('click_button', e) } }">
-        #{component.props[:label]}
+        {component.props[:label]}
       </button>
     HTML
-    vdom_code = RubyWasmUi::Template::Parser.parse(template)
-    eval(vdom_code)
   }
 )
 
 # app_a to be destroyed
-app_a = RubyWasmUi::App.create(CounterComponent)
+app_a = RubyWasmUi::App.create(CounterComponent, count: 0)
 app_element_a = JS.global[:document].getElementById("app-a")
 app_a.mount(app_element_a)
 app_a.unmount
 
 # app_b to be mounted
-app_b = RubyWasmUi::App.create(CounterComponent)
+app_b = RubyWasmUi::App.create(CounterComponent, count: 10)
 app_element_b = JS.global[:document].getElementById("app-b")
 app_b.mount(app_element_b)
