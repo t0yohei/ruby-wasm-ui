@@ -26,16 +26,28 @@ module RubyWasmUi
             next
           end
 
+          tag_name = element[:tagName].to_s.downcase
+
           # fragment node
-          if element[:nodeType] == JS.global[:Node][:ELEMENT_NODE] && element[:tagName] == 'TEMPLATE'
+          if element[:nodeType] == JS.global[:Node][:ELEMENT_NODE] && tag_name == 'template'
             vdom << "RubyWasmUi::Vdom.h_fragment([#{build_vdom(element[:content][:childNodes])}])"
+            next
+          end
+
+          if element[:nodeType] == JS.global[:Node][:ELEMENT_NODE] && is_component?(tag_name)
+            # Convert kebab-case to PascalCase for component name
+            component_name = tag_name.split('-').map(&:capitalize).join
+            attributes = parse_attributes(element[:attributes])
+            children = build_vdom(element[:childNodes])
+            vdom << "RubyWasmUi::Vdom.h(#{component_name}, {#{attributes}}, [#{children}])"
             next
           end
 
           # element node
           if element[:nodeType] == JS.global[:Node][:ELEMENT_NODE]
             attributes = parse_attributes(element[:attributes])
-            vdom << "RubyWasmUi::Vdom.h('#{element[:tagName].to_s.downcase}', {#{attributes}}, [#{build_vdom(element[:childNodes])}])"
+            children = build_vdom(element[:childNodes])
+            vdom << "RubyWasmUi::Vdom.h('#{tag_name}', {#{attributes}}, [#{children}])"
             next
           end
         end
@@ -105,6 +117,28 @@ module RubyWasmUi
           attributes_str << ":#{key} => '#{value}'"
         end
         attributes_str.join(', ')
+      end
+
+      # @param tag_name [String]
+      # @return [Boolean]
+      def is_component?(tag_name)
+        # Component tags start with  letter but exclude standard HTML elements
+        return false unless tag_name.match?(/^[a-z]/)
+
+        # List of standard HTML elements (case-sensitive comparison)
+        # List of standard HTML elements in lowercase for case-insensitive comparison
+        html_elements = %w[
+          a abbr address area article aside audio b base bdi bdo blockquote body br button
+          canvas caption cite code col colgroup data datalist dd del details dfn dialog div dl dt
+          em embed fieldset figcaption figure footer form h1 h2 h3 h4 h5 h6 head header hgroup hr html
+          i iframe img input ins kbd label legend li link main map mark menu meta meter nav noscript
+          object ol optgroup option output p param picture pre progress q rp rt ruby s samp script
+          section select small source span strong style sub summary sup table tbody td template
+          textarea tfoot th thead time title tr track u ul var video wbr
+        ]
+
+        # Convert tag_name to lowercase for case-insensitive comparison with standard HTML elements
+        !html_elements.include?(tag_name)
       end
 
       # @param doc [String]

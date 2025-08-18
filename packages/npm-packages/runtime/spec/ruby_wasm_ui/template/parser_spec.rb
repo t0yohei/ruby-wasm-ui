@@ -200,11 +200,53 @@ RSpec.describe RubyWasmUi::Template::Parser do
     end
   end
 
+  describe '.is_component?' do
+    context 'when checking standard HTML elements' do
+      it 'returns false for standard HTML elements' do
+        expect(described_class.is_component?('div')).to be false
+        expect(described_class.is_component?('span')).to be false
+        expect(described_class.is_component?('p')).to be false
+        expect(described_class.is_component?('input')).to be false
+      end
+
+      it 'returns false for uppercase standard HTML elements' do
+        expect(described_class.is_component?('DIV')).to be false
+        expect(described_class.is_component?('SPAN')).to be false
+      end
+    end
+
+    context 'when checking custom component elements' do
+      it 'returns true for kebab-case component names' do
+        expect(described_class.is_component?('custom-component')).to be true
+        expect(described_class.is_component?('my-button')).to be true
+        expect(described_class.is_component?('search-field')).to be true
+      end
+
+      it 'returns true for single word component names' do
+        expect(described_class.is_component?('customcomponent')).to be true
+        expect(described_class.is_component?('mybutton')).to be true
+      end
+    end
+
+    context 'when checking invalid elements' do
+      it 'returns false for elements starting with numbers' do
+        expect(described_class.is_component?('1component')).to be false
+        expect(described_class.is_component?('2-button')).to be false
+      end
+
+      it 'returns false for elements starting with special characters' do
+        expect(described_class.is_component?('_component')).to be false
+        expect(described_class.is_component?('-button')).to be false
+      end
+    end
+  end
+
   describe '.build_vdom' do
     let(:mock_elements) { double('elements') }
     let(:mock_text_node) { double('text_node') }
     let(:mock_element_node) { double('element_node') }
     let(:mock_template_node) { double('template_node') }
+    let(:mock_component_node) { double('component_node') }
     let(:mock_node_constants) { double('Node') }
     let(:mock_attributes) { double('attributes') }
 
@@ -271,6 +313,41 @@ RSpec.describe RubyWasmUi::Template::Parser do
       it 'builds VDOM for fragment nodes' do
         result = described_class.build_vdom(mock_elements)
         expect(result).to eq("RubyWasmUi::Vdom.h_fragment([])")
+      end
+    end
+
+    context 'when processing component nodes' do
+      let(:mock_child_elements) { double('child_elements') }
+
+      before do
+        allow(mock_elements).to receive(:forEach).and_yield(mock_component_node)
+        allow(mock_component_node).to receive(:[]).with(:nodeType).and_return(1)
+        allow(mock_component_node).to receive(:[]).with(:attributes).and_return(mock_attributes)
+        allow(mock_component_node).to receive(:[]).with(:childNodes).and_return(mock_child_elements)
+
+        # Mock empty children
+        allow(mock_child_elements).to receive(:forEach)
+
+        # Mock attributes
+        allow(mock_attributes).to receive(:[]).with(:length).and_return(0)
+      end
+
+      it 'builds VDOM for kebab-case component' do
+        allow(mock_component_node).to receive(:[]).with(:tagName).and_return('custom-component')
+        result = described_class.build_vdom(mock_elements)
+        expect(result).to eq("RubyWasmUi::Vdom.h(CustomComponent, {}, [])")
+      end
+
+      it 'builds VDOM for multi-word kebab-case component' do
+        allow(mock_component_node).to receive(:[]).with(:tagName).and_return('my-custom-button')
+        result = described_class.build_vdom(mock_elements)
+        expect(result).to eq("RubyWasmUi::Vdom.h(MyCustomButton, {}, [])")
+      end
+
+      it 'builds VDOM for single word component' do
+        allow(mock_component_node).to receive(:[]).with(:tagName).and_return('mycomponent')
+        result = described_class.build_vdom(mock_elements)
+        expect(result).to eq("RubyWasmUi::Vdom.h(Mycomponent, {}, [])")
       end
     end
   end
