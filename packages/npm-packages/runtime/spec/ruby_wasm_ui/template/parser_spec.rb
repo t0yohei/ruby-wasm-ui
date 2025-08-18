@@ -89,18 +89,33 @@ RSpec.describe RubyWasmUi::Template::Parser do
 
       it 'returns quoted string for regular text' do
         result = described_class.parse_text_node(mock_element)
-        expect(result).to eq("'Hello World'")
+        expect(result).to eq('"Hello World"')
       end
     end
 
     context 'when text node contains embedded script' do
-      before do
-        allow(mock_element).to receive(:[]).with(:nodeValue).and_return('{variable}')
+      it 'handles simple text with embedded script' do
+        allow(mock_element).to receive(:[]).with(:nodeValue).and_return('test {state[:count]}')
+        result = described_class.parse_text_node(mock_element)
+        expect(result).to eq('"test #{state[:count]}"')
       end
 
-      it 'returns extracted script without quotes' do
+      it 'handles embedded script with expression' do
+        allow(mock_element).to receive(:[]).with(:nodeValue).and_return('test {state[:count] + 1}')
         result = described_class.parse_text_node(mock_element)
-        expect(result).to eq('variable')
+        expect(result).to eq('"test #{state[:count] + 1}"')
+      end
+
+      it 'handles text with embedded script and trailing text' do
+        allow(mock_element).to receive(:[]).with(:nodeValue).and_return('test {state[:count]} test')
+        result = described_class.parse_text_node(mock_element)
+        expect(result).to eq('"test #{state[:count]} test"')
+      end
+
+      it 'handles multiple embedded scripts' do
+        allow(mock_element).to receive(:[]).with(:nodeValue).and_return('test {state[:count]} test {state[:count]} test')
+        result = described_class.parse_text_node(mock_element)
+        expect(result).to eq('"test #{state[:count]} test #{state[:count]} test"')
       end
     end
 
@@ -196,7 +211,7 @@ RSpec.describe RubyWasmUi::Template::Parser do
 
       it 'builds VDOM for text nodes' do
         result = described_class.build_vdom(mock_elements)
-        expect(result).to eq("'Hello'")
+        expect(result).to eq('"Hello"')
       end
     end
 

@@ -42,6 +42,12 @@ module RubyWasmUi
         vdom.compact.join(',')
       end
 
+      # parse text node
+      # ex) "test" -> "test"
+      # ex) "test {state[:count]}" -> "test #{state[:count]}"
+      # ex) "test {state[:count] + 1}" -> "test #{state[:count] + 1}"
+      # ex) "test {state[:count]} test" -> "test #{state[:count]} test"
+      # ex) "test {state[:count]} test {state[:count]} test" -> "test #{state[:count]} test #{state[:count]} test"
       # @param element [JS.Object]
       # @return [String]
       def parse_text_node(element)
@@ -49,9 +55,27 @@ module RubyWasmUi
 
         return nil if value.empty?
 
-        return get_embed_script(value) if embed_script?(value)
+        # Split the text by embedded script pattern and process each part
+        # Regular expression explanation:
+        # (        : Start capture group (this ensures the pattern itself is included in the result)
+        #  \{      : Match an opening curly brace (escaped because { is special in regex)
+        #  [^}]+   : Match one or more characters that are not a closing curly brace
+        #  \}      : Match a closing curly brace (escaped because } is special in regex)
+        # )        : End capture group
+        # Example:
+        #   Input:  "hello {state[:count]} world"
+        #   Output: ["hello ", "{state[:count]}", " world"]
+        parts = value.split(/(\{[^}]+\})/)
+        processed_parts = parts.map do |part|
+          if embed_script?(part)
+            "\#{#{get_embed_script(part)}}"
+          else
+            part
+          end
+        end
 
-        "'#{value}'"
+        # Join all parts and wrap in double quotes
+        %("#{processed_parts.join}")
       end
 
       # @param attributes [JS.Object]
@@ -82,6 +106,8 @@ module RubyWasmUi
         doc.match?(/\{.+\}/)
       end
 
+      # get value from embed script
+      # ex) Count: {component.state[:count]} -> Count: component.state[:count]
       # @param script [String]
       # @return [String]
       def get_embed_script(script)
