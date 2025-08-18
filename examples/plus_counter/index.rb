@@ -1,6 +1,7 @@
 require "js"
 
-CounterComponent = RubyWasmUi.define_component(
+# counter-component
+Counter = RubyWasmUi.define_component(
   state: -> { { count: 0 } },
   methods: {
     increment: -> {
@@ -8,19 +9,16 @@ CounterComponent = RubyWasmUi.define_component(
     }
   },
   render: -> (component) {
-    template = <<~HTML
+    RubyWasmUi::Template::Parser.parse_and_eval(<<~HTML, binding)
       <div>
-        <p>Count: {component.state[:count]} .</p>
-        <button on="{click: -> { component.increment }}">Increment</button>
+        <p>Count: {component.state[:count]}</p>
+        <button on="{ click: -> { component.increment } }">Increment</button>
       </div>
     HTML
-
-    vdom_code = RubyWasmUi::Template::Parser.parse(template)
-    eval(vdom_code)
   }
 )
 
 # Create and mount the app
-app = RubyWasmUi::App.create(CounterComponent)
+app = RubyWasmUi::App.create(Counter)
 app_element = JS.global[:document].getElementById("app")
 app.mount(app_element)
