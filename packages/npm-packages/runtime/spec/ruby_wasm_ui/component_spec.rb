@@ -131,4 +131,54 @@ RSpec.describe RubyWasmUi do
       end
     end
   end
+
+  describe RubyWasmUi::Component do
+    describe '#wire_event_handler' do
+      let(:render) { -> { 'content' } }
+      let(:component_class) { RubyWasmUi.define_component(render:) }
+      let(:event_name) { 'test_event' }
+      let(:parent_component) { component_class.new }
+
+      context 'with parent component' do
+        it 'handles event with payload when handler has arity of 1' do
+          handler = ->(payload) { payload[:value] * 2 }
+          component = component_class.new({}, { event_name => handler }, parent_component)
+          subscription = component.send(:wire_event_handler, event_name, handler)
+          expect(subscription).to be_a(Proc)
+        end
+
+        it 'handles event without payload when handler has arity of 0' do
+          handler = -> { 'no payload' }
+          component = component_class.new({}, { event_name => handler }, parent_component)
+          subscription = component.send(:wire_event_handler, event_name, handler)
+          expect(subscription).to be_a(Proc)
+        end
+      end
+
+      context 'without parent component' do
+        it 'handles event with payload when handler has arity of 1' do
+          handler = ->(payload) { payload[:value] * 2 }
+          component = component_class.new({}, { event_name => handler })
+          subscription = component.send(:wire_event_handler, event_name, handler)
+          expect(subscription).to be_a(Proc)
+        end
+
+        it 'handles event without payload when handler has arity of 0' do
+          handler = -> { 'no payload' }
+          component = component_class.new({}, { event_name => handler })
+          subscription = component.send(:wire_event_handler, event_name, handler)
+          expect(subscription).to be_a(Proc)
+        end
+      end
+
+      it 'returns a no-op unsubscription when subscription is nil' do
+        allow_any_instance_of(RubyWasmUi::Dispatcher).to receive(:subscribe).and_return(nil)
+        handler = -> { 'test' }
+        component = component_class.new({}, { event_name => handler })
+        subscription = component.send(:wire_event_handler, event_name, handler)
+        expect(subscription).to be_a(Proc)
+        expect { subscription.call }.not_to raise_error
+      end
+    end
+  end
 end

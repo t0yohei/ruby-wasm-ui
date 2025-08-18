@@ -171,10 +171,14 @@ module RubyWasmUi
     # @param handler [Proc] Event handler
     # @return [Object] Subscription object
     def wire_event_handler(event_name, handler)
-      handler_proc = if @parent_component
+      handler_proc = if @parent_component && handler.arity == 1
         ->(payload) { @parent_component.instance_exec(payload, &handler) }
-      else
+      elsif @parent_component && handler.arity == 0
+        ->(payload) { @parent_component.instance_exec(&handler) }
+      elsif handler.arity == 1
         ->(payload) { handler.call(payload) }
+      else
+        ->(payload) { handler.call }
       end
 
       subscription = @dispatcher.subscribe(event_name, handler_proc)

@@ -12,10 +12,10 @@ module RubyWasmUi
         if host_component
           # Same as JavaScript's handler.apply(hostComponent, arguments)
           call_handler = JS.try_convert(->(event) {
-            host_component.instance_exec(event, &handler)
+            handler.arity == 0 ? host_component.instance_exec(&handler) : host_component.instance_exec(event, &handler)
           })
         else
-          call_handler = JS.try_convert(->(event) { handler.call(event) })
+          call_handler = JS.try_convert(->(event) { handler.arity == 0 ? handler.call : handler.call(event) })
         end
         element.call(:addEventListener, event_name.to_s, call_handler)
         call_handler
