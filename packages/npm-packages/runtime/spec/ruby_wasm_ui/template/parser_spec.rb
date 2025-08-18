@@ -173,6 +173,21 @@ RSpec.describe RubyWasmUi::Template::Parser do
       end
     end
 
+    context 'when parsing "on" attribute with embedded hash' do
+      before do
+        allow(mock_attributes).to receive(:[]).with(:length).and_return(1)
+        allow(mock_attributes).to receive(:[]).with(0).and_return(mock_attribute1)
+
+        allow(mock_attribute1).to receive(:[]).with(:name).and_return('on')
+        allow(mock_attribute1).to receive(:[]).with(:value).and_return('{click: ->(e) { handle_click.call(e) }, input: ->(e) { handle_input.call(e) }}')
+      end
+
+      it 'preserves hash structure for event handlers' do
+        result = described_class.parse_attributes(mock_attributes)
+        expect(result).to eq(':on => { click: ->(e) { handle_click.call(e) }, input: ->(e) { handle_input.call(e) } }')
+      end
+    end
+
     context 'when no attributes exist' do
       before do
         allow(mock_attributes).to receive(:[]).with(:length).and_return(0)

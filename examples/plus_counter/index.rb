@@ -11,7 +11,7 @@ CounterComponent = RubyWasmUi.define_component(
     template = <<~HTML
       <div>
         <p>Count: {component.state[:count]} .</p>
-        <button onclick="{->(_e) { component.increment }}">Increment</button>
+        <button on="{click: ->(_e) { component.increment }}">Increment</button>
       </div>
     HTML
 

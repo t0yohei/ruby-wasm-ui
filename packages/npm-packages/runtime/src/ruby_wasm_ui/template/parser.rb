@@ -91,7 +91,14 @@ module RubyWasmUi
           value = attribute[:value].to_s
 
           if embed_script?(value)
-            attributes_str << ":#{key} => #{get_embed_script(value)}"
+            # Special handling for 'on' attribute to preserve hash structure
+            if key == 'on'
+              # Extract the hash content and ensure it's wrapped properly
+              hash_content = get_embed_script(value)
+              attributes_str << ":#{key} => { #{hash_content} }"
+            else
+              attributes_str << ":#{key} => #{get_embed_script(value)}"
+            end
             next
           end
 
