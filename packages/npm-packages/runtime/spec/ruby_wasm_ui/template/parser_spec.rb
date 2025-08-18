@@ -352,6 +352,84 @@ RSpec.describe RubyWasmUi::Template::Parser do
     end
   end
 
+  describe '.preprocess_self_closing_tags' do
+    context 'when processing custom elements with self-closing tags' do
+      it 'converts simple custom element self-closing tag' do
+        input = '<search-field value="test" />'
+        expected = '<search-field value="test" ></search-field>'
+        result = described_class.preprocess_self_closing_tags(input)
+        expect(result).to eq(expected)
+      end
+
+      it 'converts custom element with multiple attributes' do
+        input = '<my-component id="1" class="test" data-value="123" />'
+        expected = '<my-component id="1" class="test" data-value="123" ></my-component>'
+        result = described_class.preprocess_self_closing_tags(input)
+        expect(result).to eq(expected)
+      end
+
+      it 'converts multiple custom elements' do
+        input = '<first-component /><second-component attr="value" />'
+        expected = '<first-component ></first-component><second-component attr="value" ></second-component>'
+        result = described_class.preprocess_self_closing_tags(input)
+        expect(result).to eq(expected)
+      end
+
+      it 'handles custom elements with complex attributes including lambdas' do
+        input = '<search-field value="{component.state[:search_term]}" on="{ search: ->(term) { update(term) } }" />'
+        expected = '<search-field value="{component.state[:search_term]}" on="{ search: ->(term) { update(term) } }" ></search-field>'
+        result = described_class.preprocess_self_closing_tags(input)
+        expect(result).to eq(expected)
+      end
+
+      it 'handles nested quotes in attributes' do
+        input = '<my-component data-json=\'{"key": "value"}\' />'
+        expected = '<my-component data-json=\'{"key": "value"}\' ></my-component>'
+        result = described_class.preprocess_self_closing_tags(input)
+        expect(result).to eq(expected)
+      end
+    end
+
+    context 'when processing standard HTML elements' do
+      it 'does not convert standard HTML void elements' do
+        input = '<input type="text" />'
+        expected = '<input type="text" />'
+        result = described_class.preprocess_self_closing_tags(input)
+        expect(result).to eq(expected)
+      end
+
+      it 'does not convert single word tags' do
+        input = '<div /><span />'
+        expected = '<div /><span />'
+        result = described_class.preprocess_self_closing_tags(input)
+        expect(result).to eq(expected)
+      end
+
+      it 'does not convert already closed custom elements' do
+        input = '<my-component></my-component>'
+        expected = '<my-component></my-component>'
+        result = described_class.preprocess_self_closing_tags(input)
+        expect(result).to eq(expected)
+      end
+    end
+
+    context 'when processing mixed content' do
+      it 'converts only custom elements in mixed HTML' do
+        input = '<div><input type="text" /><my-component /></div>'
+        expected = '<div><input type="text" /><my-component ></my-component></div>'
+        result = described_class.preprocess_self_closing_tags(input)
+        expect(result).to eq(expected)
+      end
+
+      it 'handles multiple custom elements with different naming patterns' do
+        input = '<search-field /><todo-list-item /><app-header-nav />'
+        expected = '<search-field ></search-field><todo-list-item ></todo-list-item><app-header-nav ></app-header-nav>'
+        result = described_class.preprocess_self_closing_tags(input)
+        expect(result).to eq(expected)
+      end
+    end
+  end
+
   describe '.parse' do
     let(:mock_parser) { double('parser') }
     let(:mock_document) { double('document') }
@@ -359,18 +437,26 @@ RSpec.describe RubyWasmUi::Template::Parser do
     let(:mock_child_nodes) { double('child_nodes') }
 
     before do
+      # Mock preprocess_self_closing_tags to return processed template
+      allow(described_class).to receive(:preprocess_self_closing_tags).with('template_string').and_return('processed_template')
+      
       # Mock JS.eval and DOMParser
       js_mock = double('JS')
       allow(js_mock).to receive(:eval).with('return new DOMParser()').and_return(mock_parser)
-      allow(js_mock).to receive(:try_convert).with('template_string').and_return('template_string')
+      allow(js_mock).to receive(:try_convert).with('processed_template').and_return('processed_template')
       stub_const('JS', js_mock)
 
-      allow(mock_parser).to receive(:call).with(:parseFromString, 'template_string', 'text/html').and_return(mock_document)
+      allow(mock_parser).to receive(:call).with(:parseFromString, 'processed_template', 'text/html').and_return(mock_document)
       allow(mock_document).to receive(:getElementsByTagName).with('body').and_return([mock_body])
       allow(mock_body).to receive(:[]).with(:childNodes).and_return(mock_child_nodes)
 
       # Mock empty child nodes
       allow(mock_child_nodes).to receive(:forEach)
+    end
+
+    it 'preprocesses self-closing tags before parsing' do
+      expect(described_class).to receive(:preprocess_self_closing_tags).with('template_string')
+      described_class.parse('template_string')
     end
 
     it 'parses HTML template and returns VDOM string' do
@@ -388,14 +474,17 @@ RSpec.describe RubyWasmUi::Template::Parser do
     let(:mock_vdom) { double('vdom') }
 
     before do
+      # Mock preprocess_self_closing_tags
+      allow(described_class).to receive(:preprocess_self_closing_tags).with(anything).and_return('processed_template')
+      
       # Mock JS.eval, DOMParser, and JS.global
       js_mock = double('JS')
       allow(js_mock).to receive(:eval).with('return new DOMParser()').and_return(mock_parser)
-      allow(js_mock).to receive(:try_convert).with(anything).and_return('template_string')
+      allow(js_mock).to receive(:try_convert).with('processed_template').and_return('processed_template')
       allow(js_mock).to receive(:global).and_return({ Node: { TEXT_NODE: 3, ELEMENT_NODE: 1 } })
       stub_const('JS', js_mock)
 
-      allow(mock_parser).to receive(:call).with(:parseFromString, 'template_string', 'text/html').and_return(mock_document)
+      allow(mock_parser).to receive(:call).with(:parseFromString, 'processed_template', 'text/html').and_return(mock_document)
       allow(mock_document).to receive(:getElementsByTagName).with('body').and_return([mock_body])
       allow(mock_body).to receive(:[]).with(:childNodes).and_return(mock_child_nodes)
 

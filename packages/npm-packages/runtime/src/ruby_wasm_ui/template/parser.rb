@@ -8,11 +8,32 @@ module RubyWasmUi
       # @param template [String]
       # @return [String]
       def parse(template)
+        # Preprocess self-closing custom element tags
+        processed_template = preprocess_self_closing_tags(template)
+
         parser = JS.eval('return new DOMParser()')
-        document = parser.call(:parseFromString, JS.try_convert(template), 'text/html')
+        document = parser.call(:parseFromString, JS.try_convert(processed_template), 'text/html')
         elements = document.getElementsByTagName('body')[0][:childNodes]
 
         build_vdom(elements)
+      end
+
+      # Convert self-closing custom element tags to regular tags
+      # Custom elements are identified by having hyphens in their name
+      # Standard void elements (img, input, etc.) are not converted
+      # @param template [String]
+      # @return [String]
+      def preprocess_self_closing_tags(template)
+        # Pattern matches: <tag-name attributes />
+        # Where tag-name contains at least one hyphen (custom element convention)
+        # Use a more robust pattern that handles nested brackets and quotes
+        template.gsub(/<([a-z]+(?:-[a-z]+)+)((?:[^>]|"[^"]*"|'[^']*')*?)\/>/i) do
+          tag_name = ::Regexp.last_match(1)
+          attributes = ::Regexp.last_match(2)
+
+          # Convert to regular open/close tags
+          "<#{tag_name}#{attributes}></#{tag_name}>"
+        end
       end
 
       # @param elements [JS.Array]
