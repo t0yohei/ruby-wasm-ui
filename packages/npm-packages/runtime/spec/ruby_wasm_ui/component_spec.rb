@@ -7,6 +7,44 @@ RSpec.describe RubyWasmUi do
     let(:render) { ->(component) { 'rendered content' } }
     let(:state) { ->(props) { { count: 0 } } }
 
+    context 'with render proc' do
+      it 'works with render proc that accepts component argument' do
+        component_class = RubyWasmUi.define_component(
+          render: ->(component) { 'rendered with component' }
+        )
+        instance = component_class.new
+        expect(instance.render).to eq('rendered with component')
+      end
+
+      it 'works with render proc that accepts no arguments' do
+        component_class = RubyWasmUi.define_component(
+          render: -> { 'rendered without args' }
+        )
+        instance = component_class.new
+        expect(instance.render).to eq('rendered without args')
+      end
+    end
+
+    context 'with state proc' do
+      it 'works with state proc that accepts props argument' do
+        component_class = RubyWasmUi.define_component(
+          render: -> { 'content' },
+          state: ->(props) { { value: props[:initial] } }
+        )
+        instance = component_class.new(initial: 5)
+        expect(instance.state).to eq({ value: 5 })
+      end
+
+      it 'works with state proc that accepts no arguments' do
+        component_class = RubyWasmUi.define_component(
+          render: -> { 'content' },
+          state: -> { { value: 10 } }
+        )
+        instance = component_class.new
+        expect(instance.state).to eq({ value: 10 })
+      end
+    end
+
     context 'with methods parameter' do
       it 'successfully adds custom methods to the component' do
         custom_methods = {

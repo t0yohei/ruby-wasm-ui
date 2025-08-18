@@ -1,12 +1,12 @@
 require "js"
 
 CounterComponent = RubyWasmUi.define_component(
+  state: -> { { count: 0 } },
   methods: {
     increment: -> {
       update_state(count: state[:count] + 1)
     }
   },
-  state: -> (props) { { count: 0 } },
   render: -> (component) {
     template = <<~HTML
       <div>
