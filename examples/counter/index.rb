@@ -1,28 +1,28 @@
 require "js"
 
-# Counter component using the latest component-based API
+# Counter component using the latest component-based API with TemplateParser
 CounterComponent = RubyWasmUi.define_component(
   # Initialize component state
   state: ->(props) {
-    { count: 0 }
+    { count: props[:count] }
   },
 
   # Render the counter component
   render: ->(component) {
-    state = component.state
-
-    RubyWasmUi::Vdom.h("div", {}, [
-      RubyWasmUi::Vdom.h("div", {}, [state[:count].to_s]),
-      RubyWasmUi::Vdom.h(Button, {
-        label: "Increment",
-        on: { click_button: ->(_e) { component.increment } }
-      }),
-      RubyWasmUi::Vdom.h(Button, {
-        label: "Decrement",
-        on: { click_button: ->(_e) { component.decrement } }
-      })
-    ])
-  },
+    RubyWasmUi::Template::Parser.parse_and_eval(<<~HTML, binding)
+      <div>
+        <div>{component.state[:count]}</div>
+        <button-component
+          label="Increment"
+          on="{ click_button: -> { component.increment } }">
+        </button-component>
+        <button-component
+          label="Decrement"
+          on="{ click_button: -> { component.decrement } }"
+        />
+      </div>
+    HTML
+},
 
   # Component methods
   methods: {
@@ -41,21 +41,23 @@ CounterComponent = RubyWasmUi.define_component(
 )
 
 # Button component - reusable button with click handler
-Button = RubyWasmUi.define_component(
+ButtonComponent = RubyWasmUi.define_component(
   render: ->(component) {
-    RubyWasmUi::Vdom.h("button", {
-      on: { click: ->(e) { component.emit('click_button', e) } }
-    }, [component.props[:label]])
+    RubyWasmUi::Template::Parser.parse_and_eval(<<~HTML, binding)
+      <button on="{ click: ->(e) { component.emit('click_button', e) } }">
+        {component.props[:label]}
+      </button>
+    HTML
   }
 )
 
 # app_a to be destroyed
-app_a = RubyWasmUi::App.create(CounterComponent)
+app_a = RubyWasmUi::App.create(CounterComponent, count: 0)
 app_element_a = JS.global[:document].getElementById("app-a")
 app_a.mount(app_element_a)
 app_a.unmount
 
 # app_b to be mounted
-app_b = RubyWasmUi::App.create(CounterComponent)
+app_b = RubyWasmUi::App.create(CounterComponent, count: 10)
 app_element_b = JS.global[:document].getElementById("app-b")
 app_b.mount(app_element_b)

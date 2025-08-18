@@ -7,6 +7,44 @@ RSpec.describe RubyWasmUi do
     let(:render) { ->(component) { 'rendered content' } }
     let(:state) { ->(props) { { count: 0 } } }
 
+    context 'with render proc' do
+      it 'works with render proc that accepts component argument' do
+        component_class = RubyWasmUi.define_component(
+          render: ->(component) { 'rendered with component' }
+        )
+        instance = component_class.new
+        expect(instance.render).to eq('rendered with component')
+      end
+
+      it 'works with render proc that accepts no arguments' do
+        component_class = RubyWasmUi.define_component(
+          render: -> { 'rendered without args' }
+        )
+        instance = component_class.new
+        expect(instance.render).to eq('rendered without args')
+      end
+    end
+
+    context 'with state proc' do
+      it 'works with state proc that accepts props argument' do
+        component_class = RubyWasmUi.define_component(
+          render: -> { 'content' },
+          state: ->(props) { { value: props[:initial] } }
+        )
+        instance = component_class.new(initial: 5)
+        expect(instance.state).to eq({ value: 5 })
+      end
+
+      it 'works with state proc that accepts no arguments' do
+        component_class = RubyWasmUi.define_component(
+          render: -> { 'content' },
+          state: -> { { value: 10 } }
+        )
+        instance = component_class.new
+        expect(instance.state).to eq({ value: 10 })
+      end
+    end
+
     context 'with methods parameter' do
       it 'successfully adds custom methods to the component' do
         custom_methods = {
@@ -90,6 +128,56 @@ RSpec.describe RubyWasmUi do
 
         instance = component_class.new
         expect(instance).to be_a(RubyWasmUi::Component)
+      end
+    end
+  end
+
+  describe RubyWasmUi::Component do
+    describe '#wire_event_handler' do
+      let(:render) { -> { 'content' } }
+      let(:component_class) { RubyWasmUi.define_component(render:) }
+      let(:event_name) { 'test_event' }
+      let(:parent_component) { component_class.new }
+
+      context 'with parent component' do
+        it 'handles event with payload when handler has arity of 1' do
+          handler = ->(payload) { payload[:value] * 2 }
+          component = component_class.new({}, { event_name => handler }, parent_component)
+          subscription = component.send(:wire_event_handler, event_name, handler)
+          expect(subscription).to be_a(Proc)
+        end
+
+        it 'handles event without payload when handler has arity of 0' do
+          handler = -> { 'no payload' }
+          component = component_class.new({}, { event_name => handler }, parent_component)
+          subscription = component.send(:wire_event_handler, event_name, handler)
+          expect(subscription).to be_a(Proc)
+        end
+      end
+
+      context 'without parent component' do
+        it 'handles event with payload when handler has arity of 1' do
+          handler = ->(payload) { payload[:value] * 2 }
+          component = component_class.new({}, { event_name => handler })
+          subscription = component.send(:wire_event_handler, event_name, handler)
+          expect(subscription).to be_a(Proc)
+        end
+
+        it 'handles event without payload when handler has arity of 0' do
+          handler = -> { 'no payload' }
+          component = component_class.new({}, { event_name => handler })
+          subscription = component.send(:wire_event_handler, event_name, handler)
+          expect(subscription).to be_a(Proc)
+        end
+      end
+
+      it 'returns a no-op unsubscription when subscription is nil' do
+        allow_any_instance_of(RubyWasmUi::Dispatcher).to receive(:subscribe).and_return(nil)
+        handler = -> { 'test' }
+        component = component_class.new({}, { event_name => handler })
+        subscription = component.send(:wire_event_handler, event_name, handler)
+        expect(subscription).to be_a(Proc)
+        expect { subscription.call }.not_to raise_error
       end
     end
   end

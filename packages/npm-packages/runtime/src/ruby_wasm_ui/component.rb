@@ -35,7 +35,7 @@ module RubyWasmUi
       @is_mounted = false
       @vdom = nil
       @host_el = nil
-      @state = self.class.class_variable_get(:@@state) ? self.class.class_variable_get(:@@state).call(@props) : {}
+      @state = initialize_state
       @render = self.class.class_variable_get(:@@render)
       @event_handlers = event_handlers
       @parent_component = parent_component
@@ -110,7 +110,7 @@ module RubyWasmUi
 
     # @return [RubyWasmUi::Vdom]
     def render
-      @render.call(self)
+      @render.arity == 0 ? @render.call : @render.call(self)
     end
 
     # Mount component
@@ -171,16 +171,31 @@ module RubyWasmUi
     # @param handler [Proc] Event handler
     # @return [Object] Subscription object
     def wire_event_handler(event_name, handler)
-      handler_proc = if @parent_component
+      handler_proc = if @parent_component && handler.arity == 1
         ->(payload) { @parent_component.instance_exec(payload, &handler) }
-      else
+      elsif @parent_component && handler.arity == 0
+        ->(payload) { @parent_component.instance_exec(&handler) }
+      elsif handler.arity == 1
         ->(payload) { handler.call(payload) }
+      else
+        ->(payload) { handler.call }
       end
 
       subscription = @dispatcher.subscribe(event_name, handler_proc)
 
       # Ensure we always return a callable unsubscription function
       subscription || -> { puts "Warning: No-op unsubscription for #{event_name}" }
+    end
+
+    # Initialize component state based on state proc
+    # @return [Hash] Initial state
+    def initialize_state
+      state_proc = self.class.class_variable_get(:@@state)
+      if state_proc
+        state_proc.arity == 0 ? state_proc.call : state_proc.call(@props)
+      else
+        {}
+      end
     end
   end
 end
