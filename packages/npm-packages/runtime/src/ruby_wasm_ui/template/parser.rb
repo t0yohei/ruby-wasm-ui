@@ -6,10 +6,23 @@ module RubyWasmUi
       module_function
 
       # @param template [String]
+      # @param binding [Binding]
+      # @return [RubyWasmUi::Vdom]
+      def parse_and_eval(template, binding)
+        vdom_code = parse(template)
+        eval(vdom_code, binding)
+      end
+
+      # @param template [String]
       # @return [String]
       def parse(template)
         # Preprocess self-closing custom element tags
         processed_template = preprocess_self_closing_tags(template)
+
+        # Replace <template> with <div data-template> to work around DOMParser limitations
+        processed_template = processed_template.gsub(/<template\s/, '<div data-template ')
+        processed_template = processed_template.gsub(/<template>/, '<div data-template>')
+        processed_template = processed_template.gsub(/<\/template>/, '</div>')
 
         parser = JS.eval('return new DOMParser()')
         document = parser.call(:parseFromString, JS.try_convert(processed_template), 'text/html')
@@ -52,6 +65,18 @@ module RubyWasmUi
           # fragment node
           if element[:nodeType] == JS.global[:Node][:ELEMENT_NODE] && tag_name == 'template'
             vdom << "RubyWasmUi::Vdom.h_fragment([#{build_vdom(element[:content][:childNodes])}])"
+            next
+          end
+
+          # fragment node (including div elements with data-template attribute)
+          if element[:nodeType] == JS.global[:Node][:ELEMENT_NODE] && (tag_name == 'template' || (tag_name == 'div' && has_data_template_attribute?(element)))
+            # div elements with data-template don't have content property, use childNodes directly
+            if tag_name == 'template' && element[:content]
+              content_nodes = element[:content][:childNodes]
+            else
+              content_nodes = element[:childNodes]
+            end
+            vdom << "RubyWasmUi::Vdom.h_fragment([#{build_vdom(content_nodes)}])"
             next
           end
 
@@ -176,12 +201,19 @@ module RubyWasmUi
         script.gsub(/\{(.+)\}/) { ::Regexp.last_match(1) }
       end
 
-      # @param template [String]
-      # @param binding [Binding]
-      # @return [RubyWasmUi::Vdom]
-      def parse_and_eval(template, binding)
-        vdom_code = parse(template)
-        eval(vdom_code, binding)
+      # Check if element has data-template attribute
+      # @param element [JS.Object]
+      # @return [Boolean]
+      def has_data_template_attribute?(element)
+        return false unless element[:attributes]
+
+        length = element[:attributes][:length].to_i
+        length.times do |i|
+          attribute = element[:attributes][i]
+          key = attribute[:name].to_s
+          return true if key == 'data-template'
+        end
+        false
       end
     end
   end

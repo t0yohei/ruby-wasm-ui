@@ -316,6 +316,43 @@ RSpec.describe RubyWasmUi::Template::Parser do
       end
     end
 
+    context 'when processing div elements with data-template attribute' do
+      let(:mock_div_template_node) { double('div_template_node') }
+      let(:mock_child_nodes) { double('child_nodes') }
+      let(:mock_attributes) { double('attributes') }
+      let(:mock_attribute) { double('attribute') }
+
+      before do
+        allow(mock_elements).to receive(:forEach).and_yield(mock_div_template_node)
+        allow(mock_div_template_node).to receive(:[]).with(:nodeType).and_return(1)
+        allow(mock_div_template_node).to receive(:[]).with(:tagName).and_return('DIV')
+        allow(mock_div_template_node).to receive(:[]).with(:childNodes).and_return(mock_child_nodes)
+        allow(mock_div_template_node).to receive(:[]).with(:attributes).and_return(mock_attributes)
+
+        # Mock data-template attribute
+        allow(mock_attributes).to receive(:[]).with(:length).and_return(1)
+        allow(mock_attributes).to receive(:[]).with(0).and_return(mock_attribute)
+        allow(mock_attribute).to receive(:[]).with(:name).and_return('data-template')
+
+        # Mock empty children
+        allow(mock_child_nodes).to receive(:forEach)
+
+        # Mock has_data_template_attribute? method
+        allow(described_class).to receive(:has_data_template_attribute?).with(mock_div_template_node).and_return(true)
+      end
+
+      it 'builds VDOM for div elements with data-template attribute as fragments' do
+        result = described_class.build_vdom(mock_elements)
+        expect(result).to eq("RubyWasmUi::Vdom.h_fragment([])")
+      end
+
+      it 'uses childNodes directly for div elements with data-template' do
+        expect(mock_div_template_node).to receive(:[]).with(:childNodes).and_return(mock_child_nodes)
+        expect(mock_div_template_node).not_to receive(:[]).with(:content)
+        described_class.build_vdom(mock_elements)
+      end
+    end
+
     context 'when processing component nodes' do
       let(:mock_child_elements) { double('child_elements') }
 
@@ -439,7 +476,7 @@ RSpec.describe RubyWasmUi::Template::Parser do
     before do
       # Mock preprocess_self_closing_tags to return processed template
       allow(described_class).to receive(:preprocess_self_closing_tags).with('template_string').and_return('processed_template')
-      
+
       # Mock JS.eval and DOMParser
       js_mock = double('JS')
       allow(js_mock).to receive(:eval).with('return new DOMParser()').and_return(mock_parser)
@@ -463,6 +500,59 @@ RSpec.describe RubyWasmUi::Template::Parser do
       result = described_class.parse('template_string')
       expect(result).to eq('')
     end
+
+    context 'when processing template tags' do
+      it 'replaces <template> with <div data-template>' do
+        template = '<template><div>content</div></template>'
+        expected_replacement = '<div data-template><div>content</div></div>'
+
+        # Mock the replacement processing
+        allow(described_class).to receive(:preprocess_self_closing_tags).with(template).and_return(template)
+
+        # Verify the template replacement happens
+        expect(described_class).to receive(:preprocess_self_closing_tags).with(template).and_return(template)
+
+        # Mock JS components to avoid actual parsing
+        js_mock = double('JS')
+        allow(js_mock).to receive(:eval).and_return(mock_parser)
+        allow(js_mock).to receive(:try_convert).with(expected_replacement).and_return(expected_replacement)
+        stub_const('JS', js_mock)
+
+        allow(mock_parser).to receive(:call).and_return(mock_document)
+        allow(mock_document).to receive(:getElementsByTagName).and_return([mock_body])
+        allow(mock_body).to receive(:[]).and_return(mock_child_nodes)
+        allow(mock_child_nodes).to receive(:forEach)
+
+        described_class.parse(template)
+
+        # Verify that JS.try_convert was called with the replaced template
+        expect(js_mock).to have_received(:try_convert).with(expected_replacement)
+      end
+
+      it 'replaces <template attr="value"> with <div data-template attr="value">' do
+        template = '<template class="container"><div>content</div></template>'
+        expected_replacement = '<div data-template class="container"><div>content</div></div>'
+
+        # Mock the replacement processing
+        allow(described_class).to receive(:preprocess_self_closing_tags).with(template).and_return(template)
+
+        # Mock JS components to avoid actual parsing
+        js_mock = double('JS')
+        allow(js_mock).to receive(:eval).and_return(mock_parser)
+        allow(js_mock).to receive(:try_convert).with(expected_replacement).and_return(expected_replacement)
+        stub_const('JS', js_mock)
+
+        allow(mock_parser).to receive(:call).and_return(mock_document)
+        allow(mock_document).to receive(:getElementsByTagName).and_return([mock_body])
+        allow(mock_body).to receive(:[]).and_return(mock_child_nodes)
+        allow(mock_child_nodes).to receive(:forEach)
+
+        described_class.parse(template)
+
+        # Verify that JS.try_convert was called with the replaced template
+        expect(js_mock).to have_received(:try_convert).with(expected_replacement)
+      end
+    end
   end
 
   describe '.parse_and_eval' do
@@ -476,7 +566,7 @@ RSpec.describe RubyWasmUi::Template::Parser do
     before do
       # Mock preprocess_self_closing_tags
       allow(described_class).to receive(:preprocess_self_closing_tags).with(anything).and_return('processed_template')
-      
+
       # Mock JS.eval, DOMParser, and JS.global
       js_mock = double('JS')
       allow(js_mock).to receive(:eval).with('return new DOMParser()').and_return(mock_parser)
@@ -511,7 +601,7 @@ RSpec.describe RubyWasmUi::Template::Parser do
       it 'returns a VDOM object with evaluated variables' do
         template = '<div>{count}</div>'
         count = 42
-        binding = binding()
+        test_binding = binding()
 
         # Mock element node
         allow(mock_element).to receive(:[]).with(:nodeType).and_return(1) # ELEMENT_NODE
@@ -532,7 +622,7 @@ RSpec.describe RubyWasmUi::Template::Parser do
         stub_const('RubyWasmUi::Vdom', mock_vdom)
         allow(mock_vdom).to receive(:h).with('div', {}, ["42"]).and_return(mock_vdom)
 
-        result = described_class.parse_and_eval(template, binding)
+        result = described_class.parse_and_eval(template, test_binding)
         expect(result).to eq(mock_vdom)
       end
     end
@@ -541,7 +631,7 @@ RSpec.describe RubyWasmUi::Template::Parser do
       it 'returns a VDOM object with event handlers' do
         template = '<div on="{click: ->(e) { handle_click.call(e) }}"></div>'
         handle_click = -> { 'clicked' }
-        binding = binding()
+        test_binding = binding()
 
         # Mock element node with attributes
         allow(mock_element).to receive(:[]).with(:nodeType).and_return(1) # ELEMENT_NODE
@@ -558,7 +648,7 @@ RSpec.describe RubyWasmUi::Template::Parser do
         stub_const('RubyWasmUi::Vdom', mock_vdom)
         allow(mock_vdom).to receive(:h).with('div', { on: { click: kind_of(Proc) } }, []).and_return(mock_vdom)
 
-        result = described_class.parse_and_eval(template, binding)
+        result = described_class.parse_and_eval(template, test_binding)
         expect(result).to eq(mock_vdom)
       end
     end
@@ -569,7 +659,7 @@ RSpec.describe RubyWasmUi::Template::Parser do
       it 'returns a VDOM object with components' do
         template = '<custom-component>{count}</custom-component>'
         count = 42
-        binding = binding()
+        test_binding = binding()
 
         # Mock component node
         allow(mock_element).to receive(:[]).with(:nodeType).and_return(1) # ELEMENT_NODE
@@ -593,8 +683,92 @@ RSpec.describe RubyWasmUi::Template::Parser do
         stub_const('RubyWasmUi::Vdom', mock_vdom)
         allow(mock_vdom).to receive(:h).with(mock_component, {}, ["42"]).and_return(mock_vdom)
 
-        result = described_class.parse_and_eval(template, binding)
+        result = described_class.parse_and_eval(template, test_binding)
         expect(result).to eq(mock_vdom)
+      end
+    end
+  end
+
+  describe '.has_data_template_attribute?' do
+    let(:mock_element) { double('element') }
+    let(:mock_attributes) { double('attributes') }
+    let(:mock_attribute) { double('attribute') }
+
+    context 'when element has data-template attribute' do
+      before do
+        allow(mock_element).to receive(:[]).with(:attributes).and_return(mock_attributes)
+        allow(mock_attributes).to receive(:[]).with(:length).and_return(1)
+        allow(mock_attributes).to receive(:[]).with(0).and_return(mock_attribute)
+        allow(mock_attribute).to receive(:[]).with(:name).and_return('data-template')
+      end
+
+      it 'returns true' do
+        result = described_class.has_data_template_attribute?(mock_element)
+        expect(result).to be true
+      end
+    end
+
+    context 'when element has other attributes but not data-template' do
+      before do
+        allow(mock_element).to receive(:[]).with(:attributes).and_return(mock_attributes)
+        allow(mock_attributes).to receive(:[]).with(:length).and_return(2)
+
+        mock_attribute1 = double('attribute1')
+        mock_attribute2 = double('attribute2')
+        allow(mock_attributes).to receive(:[]).with(0).and_return(mock_attribute1)
+        allow(mock_attributes).to receive(:[]).with(1).and_return(mock_attribute2)
+        allow(mock_attribute1).to receive(:[]).with(:name).and_return('class')
+        allow(mock_attribute2).to receive(:[]).with(:name).and_return('id')
+      end
+
+      it 'returns false' do
+        result = described_class.has_data_template_attribute?(mock_element)
+        expect(result).to be false
+      end
+    end
+
+    context 'when element has no attributes' do
+      before do
+        allow(mock_element).to receive(:[]).with(:attributes).and_return(nil)
+      end
+
+      it 'returns false' do
+        result = described_class.has_data_template_attribute?(mock_element)
+        expect(result).to be false
+      end
+    end
+
+    context 'when element has empty attributes' do
+      before do
+        allow(mock_element).to receive(:[]).with(:attributes).and_return(mock_attributes)
+        allow(mock_attributes).to receive(:[]).with(:length).and_return(0)
+      end
+
+      it 'returns false' do
+        result = described_class.has_data_template_attribute?(mock_element)
+        expect(result).to be false
+      end
+    end
+
+    context 'when element has data-template among multiple attributes' do
+      before do
+        allow(mock_element).to receive(:[]).with(:attributes).and_return(mock_attributes)
+        allow(mock_attributes).to receive(:[]).with(:length).and_return(3)
+
+        mock_attribute1 = double('attribute1')
+        mock_attribute2 = double('attribute2')
+        mock_attribute3 = double('attribute3')
+        allow(mock_attributes).to receive(:[]).with(0).and_return(mock_attribute1)
+        allow(mock_attributes).to receive(:[]).with(1).and_return(mock_attribute2)
+        allow(mock_attributes).to receive(:[]).with(2).and_return(mock_attribute3)
+        allow(mock_attribute1).to receive(:[]).with(:name).and_return('class')
+        allow(mock_attribute2).to receive(:[]).with(:name).and_return('data-template')
+        allow(mock_attribute3).to receive(:[]).with(:name).and_return('id')
+      end
+
+      it 'returns true' do
+        result = described_class.has_data_template_attribute?(mock_element)
+        expect(result).to be true
       end
     end
   end
