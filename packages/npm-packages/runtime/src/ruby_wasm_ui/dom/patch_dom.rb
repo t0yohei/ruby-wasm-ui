@@ -124,10 +124,12 @@ module RubyWasmUi
       end
 
       # @param el [JS::Object]
-      # @param old_style [String, Array]
-      # @param new_style [String, Array]
+      # @param old_style [Hash, String]
+      # @param new_style [Hash, String]
       def self.patch_styles(el, old_style = {}, new_style = {})
-        diff = RubyWasmUi::Utils::Objects.diff(old_style || {}, new_style || {})
+        parsed_old_style = RubyWasmUi::Dom::Attributes.parse_style(old_style)
+        parsed_new_style = RubyWasmUi::Dom::Attributes.parse_style(new_style)
+        diff = RubyWasmUi::Utils::Objects.diff(parsed_old_style || {}, parsed_new_style || {})
 
         diff[:removed].each do |key|
           RubyWasmUi::Dom::Attributes.remove_style(el, key)

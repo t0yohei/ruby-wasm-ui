@@ -1,0 +1,33 @@
+<!DOCTYPE html>
+<html lang="ja">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>R-If Attribute Demo - Ruby WASM UI</title>
+    <script>
+      const urlParams = new URLSearchParams(window.location.search);
+      const isDev = urlParams.get("env") === "DEV";
+      const script = document.createElement("script");
+      script.defer = true;
+      script.src = isDev
+        ? "../../packages/npm-packages/runtime/dist/ruby-wasm-ui.js"
+        : "https://unpkg.com/ruby-wasm-ui@latest";
+      document.head.appendChild(script);
+    </script>
+    <script defer type="text/ruby" src="index.rb"></script>
+    <style>
+      body {
+        font-family: Arial, sans-serif;
+        max-width: 600px;
+        margin: 20px auto;
+        padding: 20px;
+        background-color: #f5f5f5;
+      }
+    </style>
+  </head>
+  <body>
+    <div id="app">
+      <!-- Ruby WASM UI app will mount here -->
+    </div>
+  </body>
+</html>

@@ -15,7 +15,7 @@ module RubyWasmUi
         end
 
         if style
-          style.each do |name, value|
+          parse_style(style).each do |name, value|
             set_style(element, name, value)
           end
         end
@@ -71,6 +71,34 @@ module RubyWasmUi
       def remove_attribute(element, name)
         element[name] = nil
         element.removeAttribute(name)
+      end
+
+      # Parse CSS style string into hash
+      # @param style_string [String] CSS style string like "color: red; margin: 10px;"
+      # @return [Hash] Hash with camelCase property names as keys
+      def parse_style(style)
+        return {} if style.nil?
+
+        if style.is_a?(Hash)
+          return style
+        end
+
+        result = {}
+        style.split(';').each do |style_rule|
+          next if style_rule.strip.empty?
+
+          property, value = style_rule.split(':', 2)
+          next unless property && value
+
+          property = property.strip
+          value = value.strip
+
+          # Convert kebab-case to camelCase for JavaScript style properties
+          camel_case_property = property.gsub(/-([a-z])/) { $1.upcase }
+
+          result[camel_case_property] = value
+        end
+        result
       end
     end
   end

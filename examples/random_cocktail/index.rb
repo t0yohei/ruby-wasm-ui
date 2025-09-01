@@ -9,56 +9,23 @@ random_cocktail = RubyWasmUi.define_component(
   },
 
   render: ->(component) {
-    is_loading = component.state[:is_loading]
-    cocktail = component.state[:cocktail]
+    is_loading = component.state[:is_loading] # Used in template
+    cocktail = component.state[:cocktail] # Used in template
 
-    if is_loading
-      return RubyWasmUi::Vdom.h_fragment([
-        RubyWasmUi::Vdom.h("p", {}, ["Loading..."])
-      ])
-    end
+    template = <<~HTML
+      <p r-if="{is_loading}">
+        Loading...
+      </p>
+      <button-component r-elsif="{cocktail.nil?}" on="{click_button: ->(e) { component.fetch_cocktail }}" label="Get a cocktail"/>
+      <template r-else>
+        <h1>{cocktail['strDrink']}</h1>
+        <p>{cocktail['strInstructions']}</p>
+        <img src="{cocktail['strDrinkThumb']}" alt="{cocktail['strDrink']}" style="width: 300px; height: 300px" />
+        <button-component on="{click_button: ->() { component.fetch_cocktail }}" label="Get another cocktail"/>
+      </template>
+    HTML
 
-    if cocktail.nil?
-      return RubyWasmUi::Vdom.h_fragment([
-        RubyWasmUi::Vdom.h("button", {
-          on: {
-            click: ->(e) { component.fetch_cocktail },
-          },
-        }, [
-          "Get a cocktail"
-        ])
-      ])
-    end
-
-    str_drink = cocktail["strDrink"]
-    str_drink_thumb = cocktail["strDrinkThumb"]
-    str_instructions = cocktail["strInstructions"]
-
-    RubyWasmUi::Vdom.h_fragment([
-      RubyWasmUi::Vdom.h("h1", {}, [str_drink]),
-      RubyWasmUi::Vdom.h("p", {}, [str_instructions]),
-      RubyWasmUi::Vdom.h("img", {
-        src: str_drink_thumb,
-        alt: str_drink,
-        style: {
-          width: "300px",
-          height: "300px"
-        }
-      }, []),
-      RubyWasmUi::Vdom.h(
-        "button",
-        {
-          on: {
-            click: ->(e) { component.fetch_cocktail },
-          },
-          style: {
-            display: "block",
-            margin: "1em auto"
-          }
-        },
-        ["Get another cocktail"]
-      )
-    ])
+    RubyWasmUi::Template::Parser.parse_and_eval(template, binding)
   },
 
   methods: {
@@ -79,6 +46,20 @@ random_cocktail = RubyWasmUi.define_component(
 
   on_mounted: ->(component) {
     component.fetch_cocktail
+  }
+)
+
+ButtonComponent = RubyWasmUi.define_component(
+  state: ->(props) {
+    { label: props[:label] }
+  },
+
+  render: ->(component) {
+    RubyWasmUi::Template::Parser.parse_and_eval(<<~HTML, binding)
+      <button on="{click: ->(e) { component.emit('click_button', e) }}" style="display: block; margin: 1em auto">
+        {component.state[:label]}
+      </button>
+    HTML
   }
 )
 
