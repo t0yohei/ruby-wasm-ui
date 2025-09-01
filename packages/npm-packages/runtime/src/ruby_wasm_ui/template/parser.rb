@@ -84,13 +84,7 @@ module RubyWasmUi
               vdom << conditional_group
               i = next_index
             else
-              # div elements with data-template don't have content property, use childNodes directly
-              if tag_name == 'template' && element[:content]
-                content_nodes = element[:content][:childNodes]
-              else
-                content_nodes = element[:childNodes]
-              end
-              vdom << "RubyWasmUi::Vdom.h_fragment([#{build_vdom(content_nodes)}])"
+              vdom << build_fragment(element, tag_name)
               i += 1
             end
             next
@@ -107,15 +101,9 @@ module RubyWasmUi
             else
               # Handle components and regular elements
               if is_component?(tag_name)
-                # Convert kebab-case to PascalCase for component name
-                component_name = tag_name.split('-').map(&:capitalize).join
-                attributes = parse_attributes(element[:attributes].to_a)
-                children = build_vdom(element[:childNodes])
-                vdom << "RubyWasmUi::Vdom.h(#{component_name}, {#{attributes}}, [#{children}])"
+                vdom << build_component(element, tag_name)
               else
-                attributes = parse_attributes(element[:attributes].to_a)
-                children = build_vdom(element[:childNodes])
-                vdom << "RubyWasmUi::Vdom.h('#{tag_name}', {#{attributes}}, [#{children}])"
+                vdom << build_element(element, tag_name)
               end
               i += 1
             end
@@ -326,26 +314,13 @@ module RubyWasmUi
 
         if tag_name == 'template' || (tag_name == 'div' && has_data_template_attribute?(element))
           # For template elements, render the content directly
-          # div elements with data-template don't have content property, use childNodes directly
-          if tag_name == 'template' && element[:content]
-            content_nodes = element[:content][:childNodes]
-          else
-            content_nodes = element[:childNodes]
-          end
-          children = build_vdom(content_nodes)
-          "RubyWasmUi::Vdom.h_fragment([#{children}])"
+          build_fragment(element, tag_name)
+        elsif is_component?(tag_name)
+          # For components, render the component
+          build_component(element, tag_name, filtered_attributes)
         else
-          # For regular elements and components, render the element itself
-          attributes_str = parse_attributes(filtered_attributes)
-          children = build_vdom(element[:childNodes])
-
-          if is_component?(tag_name)
-            # Convert kebab-case to PascalCase for component name
-            component_name = tag_name.split('-').map(&:capitalize).join
-            "RubyWasmUi::Vdom.h(#{component_name}, {#{attributes_str}}, [#{children}])"
-          else
-            "RubyWasmUi::Vdom.h('#{tag_name}', {#{attributes_str}}, [#{children}])"
-          end
+          # For regular HTML elements, render the element
+          build_element(element, tag_name, filtered_attributes)
         end
       end
 
@@ -393,6 +368,47 @@ module RubyWasmUi
           end
         end
         filtered
+      end
+
+      # Build fragment or div element with data-template attribute
+      # @param element [JS.Object]
+      # @param tag_name [String]
+      # @return [String]
+      def build_fragment(element, tag_name)
+        # div elements with data-template don't have content property, use childNodes directly
+        if tag_name == 'template' && element[:content]
+          content_nodes = element[:content][:childNodes]
+        else
+          content_nodes = element[:childNodes]
+        end
+        children = build_vdom(content_nodes)
+        "RubyWasmUi::Vdom.h_fragment([#{children}])"
+      end
+
+      # Build component element
+      # @param element [JS.Object]
+      # @param tag_name [String]
+      # @param filtered_attributes [Array]
+      # @return [String]
+      def build_component(element, tag_name, filtered_attributes = nil)
+        attributes_str = parse_attributes(filtered_attributes || element[:attributes].to_a)
+        children = build_vdom(element[:childNodes])
+
+        # Convert kebab-case to PascalCase for component name
+        component_name = tag_name.split('-').map(&:capitalize).join
+        "RubyWasmUi::Vdom.h(#{component_name}, {#{attributes_str}}, [#{children}])"
+      end
+
+      # Build regular HTML element
+      # @param element [JS.Object]
+      # @param tag_name [String]
+      # @param filtered_attributes [Array]
+      # @return [String]
+      def build_element(element, tag_name, filtered_attributes = nil)
+        attributes_str = parse_attributes(filtered_attributes || element[:attributes].to_a)
+        children = build_vdom(element[:childNodes])
+
+        "RubyWasmUi::Vdom.h('#{tag_name}', {#{attributes_str}}, [#{children}])"
       end
     end
   end
