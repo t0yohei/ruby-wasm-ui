@@ -96,28 +96,27 @@ module RubyWasmUi
             next
           end
 
-          if element[:nodeType] == JS.global[:Node][:ELEMENT_NODE] && is_component?(tag_name)
-            # Convert kebab-case to PascalCase for component name
-            component_name = tag_name.split('-').map(&:capitalize).join
-            attributes = parse_attributes(element[:attributes].to_a)
-            children = build_vdom(element[:childNodes])
-            vdom << "RubyWasmUi::Vdom.h(#{component_name}, {#{attributes}}, [#{children}])"
-            i += 1
-            next
-          end
-
-          # element node
+          # element node (including components)
           if element[:nodeType] == JS.global[:Node][:ELEMENT_NODE]
-            # Check for conditional attributes on regular elements
+            # Check for conditional attributes on all elements (including components)
             if has_conditional_attribute?(element)
               # Process conditional group (r-if, r-elsif, r-else)
               conditional_group, next_index = build_conditional_group(elements, i)
               vdom << conditional_group
               i = next_index
             else
-              attributes = parse_attributes(element[:attributes].to_a)
-              children = build_vdom(element[:childNodes])
-              vdom << "RubyWasmUi::Vdom.h('#{tag_name}', {#{attributes}}, [#{children}])"
+              # Handle components and regular elements
+              if is_component?(tag_name)
+                # Convert kebab-case to PascalCase for component name
+                component_name = tag_name.split('-').map(&:capitalize).join
+                attributes = parse_attributes(element[:attributes].to_a)
+                children = build_vdom(element[:childNodes])
+                vdom << "RubyWasmUi::Vdom.h(#{component_name}, {#{attributes}}, [#{children}])"
+              else
+                attributes = parse_attributes(element[:attributes].to_a)
+                children = build_vdom(element[:childNodes])
+                vdom << "RubyWasmUi::Vdom.h('#{tag_name}', {#{attributes}}, [#{children}])"
+              end
               i += 1
             end
             next
@@ -336,10 +335,17 @@ module RubyWasmUi
           children = build_vdom(content_nodes)
           "RubyWasmUi::Vdom.h_fragment([#{children}])"
         else
-          # For regular elements, render the element itself
+          # For regular elements and components, render the element itself
           attributes_str = parse_attributes(filtered_attributes)
           children = build_vdom(element[:childNodes])
-          "RubyWasmUi::Vdom.h('#{tag_name}', {#{attributes_str}}, [#{children}])"
+
+          if is_component?(tag_name)
+            # Convert kebab-case to PascalCase for component name
+            component_name = tag_name.split('-').map(&:capitalize).join
+            "RubyWasmUi::Vdom.h(#{component_name}, {#{attributes_str}}, [#{children}])"
+          else
+            "RubyWasmUi::Vdom.h('#{tag_name}', {#{attributes_str}}, [#{children}])"
+          end
         end
       end
 

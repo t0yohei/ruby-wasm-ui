@@ -377,6 +377,9 @@ RSpec.describe RubyWasmUi::Template::Parser do
 
         # Mock attributes.to_a
         allow(mock_attributes).to receive(:to_a).and_return([])
+        
+        # Mock has_conditional_attribute? to return false for regular component tests
+        allow(mock_attributes).to receive(:[]).with(:length).and_return(0)
       end
 
       it 'builds VDOM for kebab-case component' do
@@ -395,6 +398,38 @@ RSpec.describe RubyWasmUi::Template::Parser do
         allow(mock_component_node).to receive(:[]).with(:tagName).and_return('mycomponent')
         result = described_class.build_vdom(mock_elements)
         expect(result).to eq("RubyWasmUi::Vdom.h(Mycomponent, {}, [])")
+      end
+    end
+
+    context 'when processing components with conditional attributes' do
+      let(:mock_component_elements) { double('component_elements') }
+      let(:mock_component_with_conditional) { double('component_with_conditional') }
+      let(:mock_component_attributes) { double('component_attributes') }
+      let(:mock_conditional_attribute) { double('conditional_attribute') }
+
+      before do
+        allow(mock_component_elements).to receive(:[]).with(:length).and_return(1)
+        allow(mock_component_elements).to receive(:[]).with(0).and_return(mock_component_with_conditional)
+        allow(mock_component_with_conditional).to receive(:[]).with(:nodeType).and_return(1)
+        allow(mock_component_with_conditional).to receive(:[]).with(:tagName).and_return('custom-component')
+        allow(mock_component_with_conditional).to receive(:[]).with(:attributes).and_return(mock_component_attributes)
+        
+        # Mock conditional attribute
+        allow(mock_component_attributes).to receive(:[]).with(:length).and_return(1)
+        allow(mock_component_attributes).to receive(:[]).with(0).and_return(mock_conditional_attribute)
+        allow(mock_conditional_attribute).to receive(:[]).with(:name).and_return('r-if')
+        allow(mock_conditional_attribute).to receive(:[]).with(:value).and_return('condition')
+
+        # Mock build_conditional_group method
+        allow(described_class).to receive(:build_conditional_group)
+          .with(mock_component_elements, 0)
+          .and_return(['conditional_code', 1])
+      end
+
+      it 'processes conditional attributes on components' do
+        result = described_class.build_vdom(mock_component_elements)
+        expect(result).to eq("conditional_code")
+        expect(described_class).to have_received(:build_conditional_group)
       end
     end
   end
@@ -1023,6 +1058,75 @@ RSpec.describe RubyWasmUi::Template::Parser do
 
       result = described_class.filter_conditional_attributes(mock_attributes)
       expect(result).to eq([mock_attr1])
+    end
+  end
+
+  describe '.build_single_conditional_content' do
+    let(:mock_element) { double('element') }
+    let(:mock_attributes) { double('attributes') }
+    let(:mock_child_nodes) { double('child_nodes') }
+
+    before do
+      allow(mock_element).to receive(:[]).with(:childNodes).and_return(mock_child_nodes)
+      allow(mock_child_nodes).to receive(:[]).with(:length).and_return(0)
+      allow(described_class).to receive(:filter_conditional_attributes).with(mock_attributes).and_return([])
+      allow(described_class).to receive(:parse_attributes).with([]).and_return('')
+      # Mock for has_data_template_attribute? method
+      allow(mock_attributes).to receive(:[]).with(:length).and_return(0)
+    end
+
+    context 'when element is a regular HTML element' do
+      before do
+        allow(mock_element).to receive(:[]).with(:tagName).and_return('DIV')
+        allow(mock_element).to receive(:[]).with(:attributes).and_return(mock_attributes)
+      end
+
+      it 'builds VDOM for regular element' do
+        result = described_class.build_single_conditional_content(mock_element)
+        expect(result).to eq("RubyWasmUi::Vdom.h('div', {}, [])")
+      end
+    end
+
+    context 'when element is a component' do
+      before do
+        allow(mock_element).to receive(:[]).with(:tagName).and_return('CUSTOM-COMPONENT')
+        allow(mock_element).to receive(:[]).with(:attributes).and_return(mock_attributes)
+      end
+
+      it 'builds VDOM for component with PascalCase name' do
+        result = described_class.build_single_conditional_content(mock_element)
+        expect(result).to eq("RubyWasmUi::Vdom.h(CustomComponent, {}, [])")
+      end
+    end
+
+    context 'when element is a multi-word component' do
+      before do
+        allow(mock_element).to receive(:[]).with(:tagName).and_return('MY-CUSTOM-BUTTON')
+        allow(mock_element).to receive(:[]).with(:attributes).and_return(mock_attributes)
+      end
+
+      it 'builds VDOM for multi-word component with PascalCase name' do
+        result = described_class.build_single_conditional_content(mock_element)
+        expect(result).to eq("RubyWasmUi::Vdom.h(MyCustomButton, {}, [])")
+      end
+    end
+
+    context 'when element is a template' do
+      let(:mock_content) { double('content') }
+      let(:mock_content_child_nodes) { double('content_child_nodes') }
+
+      before do
+        allow(mock_element).to receive(:[]).with(:tagName).and_return('TEMPLATE')
+        allow(mock_element).to receive(:[]).with(:attributes).and_return(mock_attributes)
+        allow(mock_element).to receive(:[]).with(:content).and_return(mock_content)
+        allow(mock_content).to receive(:[]).with(:childNodes).and_return(mock_content_child_nodes)
+        allow(mock_content_child_nodes).to receive(:[]).with(:length).and_return(0)
+      end
+
+      it 'builds VDOM fragment for template element' do
+        result = described_class.build_single_conditional_content(mock_element)
+        expect(result).to eq("RubyWasmUi::Vdom.h_fragment([])")
+      end
     end
   end
 end
