@@ -9,56 +9,29 @@ random_cocktail = RubyWasmUi.define_component(
   },
 
   render: ->(component) {
-    is_loading = component.state[:is_loading]
-    cocktail = component.state[:cocktail]
+    is_loading = component.state[:is_loading] # Used in template
+    cocktail = component.state[:cocktail] # Used in template
 
-    if is_loading
-      return RubyWasmUi::Vdom.h_fragment([
-        RubyWasmUi::Vdom.h("p", {}, ["Loading..."])
-      ])
-    end
+    template = <<~HTML
+      <template r-if="{is_loading}">
+        <p>Loading...</p>
+      </template>
+      <template r-elsif="{cocktail.nil?}">
+        <button on="{click: ->(e) { component.fetch_cocktail }}">
+          Get a cocktail
+        </button>
+      </template>
+      <template r-else>
+        <h1>{cocktail['strDrink']}</h1>
+        <p>{cocktail['strInstructions']}</p>
+        <img src="{cocktail['strDrinkThumb']}" alt="{cocktail['strDrink']}" style="width: 300px; height: 300px" />
+        <button on="{click: ->(e) { component.fetch_cocktail }}" style="display: block; margin: 1em auto">
+          Get another cocktail
+        </button>
+      </template>
+    HTML
 
-    if cocktail.nil?
-      return RubyWasmUi::Vdom.h_fragment([
-        RubyWasmUi::Vdom.h("button", {
-          on: {
-            click: ->(e) { component.fetch_cocktail },
-          },
-        }, [
-          "Get a cocktail"
-        ])
-      ])
-    end
-
-    str_drink = cocktail["strDrink"]
-    str_drink_thumb = cocktail["strDrinkThumb"]
-    str_instructions = cocktail["strInstructions"]
-
-    RubyWasmUi::Vdom.h_fragment([
-      RubyWasmUi::Vdom.h("h1", {}, [str_drink]),
-      RubyWasmUi::Vdom.h("p", {}, [str_instructions]),
-      RubyWasmUi::Vdom.h("img", {
-        src: str_drink_thumb,
-        alt: str_drink,
-        style: {
-          width: "300px",
-          height: "300px"
-        }
-      }, []),
-      RubyWasmUi::Vdom.h(
-        "button",
-        {
-          on: {
-            click: ->(e) { component.fetch_cocktail },
-          },
-          style: {
-            display: "block",
-            margin: "1em auto"
-          }
-        },
-        ["Get another cocktail"]
-      )
-    ])
+    RubyWasmUi::Template::Parser.parse_and_eval(template, binding)
   },
 
   methods: {

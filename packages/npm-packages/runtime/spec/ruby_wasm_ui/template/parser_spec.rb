@@ -135,16 +135,15 @@ RSpec.describe RubyWasmUi::Template::Parser do
   end
 
   describe '.parse_attributes' do
-    let(:mock_attributes) { double('attributes') }
     let(:mock_attribute1) { double('attribute1') }
     let(:mock_attribute2) { double('attribute2') }
 
     context 'when parsing simple attributes' do
-      before do
-        allow(mock_attributes).to receive(:[]).with(:length).and_return(2)
-        allow(mock_attributes).to receive(:[]).with(0).and_return(mock_attribute1)
-        allow(mock_attributes).to receive(:[]).with(1).and_return(mock_attribute2)
+      let(:attributes_array) do
+        [mock_attribute1, mock_attribute2]
+      end
 
+      before do
         allow(mock_attribute1).to receive(:[]).with(:name).and_return('class')
         allow(mock_attribute1).to receive(:[]).with(:value).and_return('container')
 
@@ -153,48 +152,44 @@ RSpec.describe RubyWasmUi::Template::Parser do
       end
 
       it 'returns formatted attribute string' do
-        result = described_class.parse_attributes(mock_attributes)
+        result = described_class.parse_attributes(attributes_array)
         expect(result).to eq(":class => 'container', :id => 'main'")
       end
     end
 
     context 'when parsing attributes with embedded scripts' do
-      before do
-        allow(mock_attributes).to receive(:[]).with(:length).and_return(1)
-        allow(mock_attributes).to receive(:[]).with(0).and_return(mock_attribute1)
+      let(:attributes_array) { [mock_attribute1] }
 
+      before do
         allow(mock_attribute1).to receive(:[]).with(:name).and_return('onclick')
         allow(mock_attribute1).to receive(:[]).with(:value).and_return('{handler}')
       end
 
       it 'extracts script without quotes' do
-        result = described_class.parse_attributes(mock_attributes)
+        result = described_class.parse_attributes(attributes_array)
         expect(result).to eq(':onclick => handler')
       end
     end
 
     context 'when parsing "on" attribute with embedded hash' do
-      before do
-        allow(mock_attributes).to receive(:[]).with(:length).and_return(1)
-        allow(mock_attributes).to receive(:[]).with(0).and_return(mock_attribute1)
+      let(:attributes_array) { [mock_attribute1] }
 
+      before do
         allow(mock_attribute1).to receive(:[]).with(:name).and_return('on')
         allow(mock_attribute1).to receive(:[]).with(:value).and_return('{click: ->(e) { handle_click.call(e) }, input: ->(e) { handle_input.call(e) }}')
       end
 
       it 'preserves hash structure for event handlers' do
-        result = described_class.parse_attributes(mock_attributes)
-        expect(result).to eq(':on => { click: ->(e) { handle_click.call(e) }, input: ->(e) { handle_input.call(e) } }')
+        result = described_class.parse_attributes(attributes_array)
+        expect(result).to eq(':on => {click: ->(e) { handle_click.call(e) }, input: ->(e) { handle_input.call(e) }}')
       end
     end
 
     context 'when no attributes exist' do
-      before do
-        allow(mock_attributes).to receive(:[]).with(:length).and_return(0)
-      end
+      let(:attributes_array) { [] }
 
       it 'returns empty string' do
-        result = described_class.parse_attributes(mock_attributes)
+        result = described_class.parse_attributes(attributes_array)
         expect(result).to eq('')
       end
     end
@@ -261,7 +256,8 @@ RSpec.describe RubyWasmUi::Template::Parser do
 
     context 'when processing text nodes' do
       before do
-        allow(mock_elements).to receive(:forEach).and_yield(mock_text_node)
+        allow(mock_elements).to receive(:[]).with(:length).and_return(1)
+        allow(mock_elements).to receive(:[]).with(0).and_return(mock_text_node)
         allow(mock_text_node).to receive(:[]).with(:nodeType).and_return(3)
         allow(mock_text_node).to receive(:[]).with(:nodeValue).and_return('Hello')
       end
@@ -276,17 +272,22 @@ RSpec.describe RubyWasmUi::Template::Parser do
       let(:mock_child_elements) { double('child_elements') }
 
       before do
-        allow(mock_elements).to receive(:forEach).and_yield(mock_element_node)
+        allow(mock_elements).to receive(:[]).with(:length).and_return(1)
+        allow(mock_elements).to receive(:[]).with(0).and_return(mock_element_node)
         allow(mock_element_node).to receive(:[]).with(:nodeType).and_return(1)
         allow(mock_element_node).to receive(:[]).with(:tagName).and_return('DIV')
         allow(mock_element_node).to receive(:[]).with(:attributes).and_return(mock_attributes)
         allow(mock_element_node).to receive(:[]).with(:childNodes).and_return(mock_child_elements)
 
-        # Mock attributes
+        # Mock attributes.to_a and :length for has_data_template_attribute?
+        allow(mock_attributes).to receive(:to_a).and_return([])
         allow(mock_attributes).to receive(:[]).with(:length).and_return(0)
 
         # Mock empty children
-        allow(mock_child_elements).to receive(:forEach)
+        allow(mock_child_elements).to receive(:[]).with(:length).and_return(0)
+
+        # Mock has_conditional_attribute? to return false
+        allow(described_class).to receive(:has_conditional_attribute?).with(mock_element_node).and_return(false)
       end
 
       it 'builds VDOM for element nodes' do
@@ -300,14 +301,18 @@ RSpec.describe RubyWasmUi::Template::Parser do
       let(:mock_child_nodes) { double('child_nodes') }
 
       before do
-        allow(mock_elements).to receive(:forEach).and_yield(mock_template_node)
+        allow(mock_elements).to receive(:[]).with(:length).and_return(1)
+        allow(mock_elements).to receive(:[]).with(0).and_return(mock_template_node)
         allow(mock_template_node).to receive(:[]).with(:nodeType).and_return(1)
         allow(mock_template_node).to receive(:[]).with(:tagName).and_return('TEMPLATE')
         allow(mock_template_node).to receive(:[]).with(:content).and_return(mock_content)
         allow(mock_content).to receive(:[]).with(:childNodes).and_return(mock_child_nodes)
 
         # Mock empty children
-        allow(mock_child_nodes).to receive(:forEach)
+        allow(mock_child_nodes).to receive(:[]).with(:length).and_return(0)
+
+        # Mock has_conditional_attribute? to return false
+        allow(described_class).to receive(:has_conditional_attribute?).with(mock_template_node).and_return(false)
       end
 
       it 'builds VDOM for fragment nodes' do
@@ -323,7 +328,8 @@ RSpec.describe RubyWasmUi::Template::Parser do
       let(:mock_attribute) { double('attribute') }
 
       before do
-        allow(mock_elements).to receive(:forEach).and_yield(mock_div_template_node)
+        allow(mock_elements).to receive(:[]).with(:length).and_return(1)
+        allow(mock_elements).to receive(:[]).with(0).and_return(mock_div_template_node)
         allow(mock_div_template_node).to receive(:[]).with(:nodeType).and_return(1)
         allow(mock_div_template_node).to receive(:[]).with(:tagName).and_return('DIV')
         allow(mock_div_template_node).to receive(:[]).with(:childNodes).and_return(mock_child_nodes)
@@ -335,10 +341,13 @@ RSpec.describe RubyWasmUi::Template::Parser do
         allow(mock_attribute).to receive(:[]).with(:name).and_return('data-template')
 
         # Mock empty children
-        allow(mock_child_nodes).to receive(:forEach)
+        allow(mock_child_nodes).to receive(:[]).with(:length).and_return(0)
 
         # Mock has_data_template_attribute? method
         allow(described_class).to receive(:has_data_template_attribute?).with(mock_div_template_node).and_return(true)
+
+        # Mock has_conditional_attribute? to return false
+        allow(described_class).to receive(:has_conditional_attribute?).with(mock_div_template_node).and_return(false)
       end
 
       it 'builds VDOM for div elements with data-template attribute as fragments' do
@@ -357,16 +366,17 @@ RSpec.describe RubyWasmUi::Template::Parser do
       let(:mock_child_elements) { double('child_elements') }
 
       before do
-        allow(mock_elements).to receive(:forEach).and_yield(mock_component_node)
+        allow(mock_elements).to receive(:[]).with(:length).and_return(1)
+        allow(mock_elements).to receive(:[]).with(0).and_return(mock_component_node)
         allow(mock_component_node).to receive(:[]).with(:nodeType).and_return(1)
         allow(mock_component_node).to receive(:[]).with(:attributes).and_return(mock_attributes)
         allow(mock_component_node).to receive(:[]).with(:childNodes).and_return(mock_child_elements)
 
         # Mock empty children
-        allow(mock_child_elements).to receive(:forEach)
+        allow(mock_child_elements).to receive(:[]).with(:length).and_return(0)
 
-        # Mock attributes
-        allow(mock_attributes).to receive(:[]).with(:length).and_return(0)
+        # Mock attributes.to_a
+        allow(mock_attributes).to receive(:to_a).and_return([])
       end
 
       it 'builds VDOM for kebab-case component' do
@@ -488,7 +498,7 @@ RSpec.describe RubyWasmUi::Template::Parser do
       allow(mock_body).to receive(:[]).with(:childNodes).and_return(mock_child_nodes)
 
       # Mock empty child nodes
-      allow(mock_child_nodes).to receive(:forEach)
+      allow(mock_child_nodes).to receive(:[]).with(:length).and_return(0)
     end
 
     it 'preprocesses self-closing tags before parsing' do
@@ -521,7 +531,7 @@ RSpec.describe RubyWasmUi::Template::Parser do
         allow(mock_parser).to receive(:call).and_return(mock_document)
         allow(mock_document).to receive(:getElementsByTagName).and_return([mock_body])
         allow(mock_body).to receive(:[]).and_return(mock_child_nodes)
-        allow(mock_child_nodes).to receive(:forEach)
+        allow(mock_child_nodes).to receive(:[]).with(:length).and_return(0)
 
         described_class.parse(template)
 
@@ -545,7 +555,7 @@ RSpec.describe RubyWasmUi::Template::Parser do
         allow(mock_parser).to receive(:call).and_return(mock_document)
         allow(mock_document).to receive(:getElementsByTagName).and_return([mock_body])
         allow(mock_body).to receive(:[]).and_return(mock_child_nodes)
-        allow(mock_child_nodes).to receive(:forEach)
+        allow(mock_child_nodes).to receive(:[]).with(:length).and_return(0)
 
         described_class.parse(template)
 
@@ -584,43 +594,48 @@ RSpec.describe RubyWasmUi::Template::Parser do
       allow(mock_element).to receive(:[]).with(:attributes).and_return({ length: 0 })
       allow(mock_element).to receive(:[]).with(:childNodes).and_return([])
 
-      # Mock child nodes as a JavaScript-like array with forEach
+      # Mock child nodes as a JavaScript-like array with length and indexing
       mock_child_nodes_array = double('child_nodes_array')
-      allow(mock_child_nodes_array).to receive(:forEach) do |&block|
-        block.call(mock_element)
-      end
+      allow(mock_child_nodes_array).to receive(:[]).with(:length).and_return(1)
+      allow(mock_child_nodes_array).to receive(:[]).with(0).and_return(mock_element)
       allow(mock_body).to receive(:[]).with(:childNodes).and_return(mock_child_nodes_array)
 
       # Mock empty child nodes for element
       mock_empty_nodes = double('empty_nodes')
-      allow(mock_empty_nodes).to receive(:forEach)
+      allow(mock_empty_nodes).to receive(:[]).with(:length).and_return(0)
       allow(mock_element).to receive(:[]).with(:childNodes).and_return(mock_empty_nodes)
     end
 
     context 'when evaluating a template with variables' do
       it 'returns a VDOM object with evaluated variables' do
         template = '<div>{count}</div>'
-        count = 42
+        count = 42 # Used in template evaluation
         test_binding = binding()
 
         # Mock element node
         allow(mock_element).to receive(:[]).with(:nodeType).and_return(1) # ELEMENT_NODE
         allow(mock_element).to receive(:[]).with(:tagName).and_return('DIV')
-        allow(mock_element).to receive(:[]).with(:attributes).and_return({ length: 0 })
+        mock_element_attributes = double('element_attributes')
+        allow(mock_element_attributes).to receive(:to_a).and_return([])
+        allow(mock_element_attributes).to receive(:[]).with(:length).and_return(0)
+        allow(mock_element).to receive(:[]).with(:attributes).and_return(mock_element_attributes)
+
+        # Mock has_conditional_attribute? to return false
+        allow(described_class).to receive(:has_conditional_attribute?).with(mock_element).and_return(false)
 
         # Mock text node for count
         mock_text_node = double('text_node')
         allow(mock_text_node).to receive(:[]).with(:nodeType).and_return(3) # TEXT_NODE
         allow(mock_text_node).to receive(:[]).with(:nodeValue).and_return('{count}')
         mock_child_nodes = double('child_nodes')
-        allow(mock_child_nodes).to receive(:forEach) do |&block|
-          block.call(mock_text_node)
-        end
+        allow(mock_child_nodes).to receive(:[]).with(:length).and_return(1)
+        allow(mock_child_nodes).to receive(:[]).with(0).and_return(mock_text_node)
         allow(mock_element).to receive(:[]).with(:childNodes).and_return(mock_child_nodes)
 
         # Mock RubyWasmUi::Vdom
         stub_const('RubyWasmUi::Vdom', mock_vdom)
         allow(mock_vdom).to receive(:h).with('div', {}, ["42"]).and_return(mock_vdom)
+        allow(mock_vdom).to receive(:h_fragment).with([mock_vdom]).and_return(mock_vdom)
 
         result = described_class.parse_and_eval(template, test_binding)
         expect(result).to eq(mock_vdom)
@@ -630,7 +645,7 @@ RSpec.describe RubyWasmUi::Template::Parser do
     context 'when evaluating a template with event handlers' do
       it 'returns a VDOM object with event handlers' do
         template = '<div on="{click: ->(e) { handle_click.call(e) }}"></div>'
-        handle_click = -> { 'clicked' }
+        handle_click = -> { 'clicked' } # Used in template evaluation
         test_binding = binding()
 
         # Mock element node with attributes
@@ -642,11 +657,16 @@ RSpec.describe RubyWasmUi::Template::Parser do
         allow(mock_attributes).to receive(:[]).with(0).and_return(mock_attribute)
         allow(mock_attribute).to receive(:[]).with(:name).and_return('on')
         allow(mock_attribute).to receive(:[]).with(:value).and_return('{click: ->(e) { handle_click.call(e) }}')
+        allow(mock_attributes).to receive(:to_a).and_return([mock_attribute])
         allow(mock_element).to receive(:[]).with(:attributes).and_return(mock_attributes)
+
+        # Mock has_conditional_attribute? to return false
+        allow(described_class).to receive(:has_conditional_attribute?).with(mock_element).and_return(false)
 
         # Mock RubyWasmUi::Vdom
         stub_const('RubyWasmUi::Vdom', mock_vdom)
         allow(mock_vdom).to receive(:h).with('div', { on: { click: kind_of(Proc) } }, []).and_return(mock_vdom)
+        allow(mock_vdom).to receive(:h_fragment).with([mock_vdom]).and_return(mock_vdom)
 
         result = described_class.parse_and_eval(template, test_binding)
         expect(result).to eq(mock_vdom)
@@ -658,22 +678,24 @@ RSpec.describe RubyWasmUi::Template::Parser do
 
       it 'returns a VDOM object with components' do
         template = '<custom-component>{count}</custom-component>'
-        count = 42
+        count = 42 # Used in template evaluation
         test_binding = binding()
 
         # Mock component node
         allow(mock_element).to receive(:[]).with(:nodeType).and_return(1) # ELEMENT_NODE
         allow(mock_element).to receive(:[]).with(:tagName).and_return('CUSTOM-COMPONENT')
-        allow(mock_element).to receive(:[]).with(:attributes).and_return({ length: 0 })
+        mock_component_attributes = double('component_attributes')
+        allow(mock_component_attributes).to receive(:to_a).and_return([])
+        allow(mock_component_attributes).to receive(:[]).with(:length).and_return(0)
+        allow(mock_element).to receive(:[]).with(:attributes).and_return(mock_component_attributes)
 
         # Mock text node for count
         mock_text_node = double('text_node')
         allow(mock_text_node).to receive(:[]).with(:nodeType).and_return(3) # TEXT_NODE
         allow(mock_text_node).to receive(:[]).with(:nodeValue).and_return('{count}')
         mock_child_nodes = double('child_nodes')
-        allow(mock_child_nodes).to receive(:forEach) do |&block|
-          block.call(mock_text_node)
-        end
+        allow(mock_child_nodes).to receive(:[]).with(:length).and_return(1)
+        allow(mock_child_nodes).to receive(:[]).with(0).and_return(mock_text_node)
         allow(mock_element).to receive(:[]).with(:childNodes).and_return(mock_child_nodes)
 
         # Mock component class
@@ -682,9 +704,48 @@ RSpec.describe RubyWasmUi::Template::Parser do
         # Mock RubyWasmUi::Vdom
         stub_const('RubyWasmUi::Vdom', mock_vdom)
         allow(mock_vdom).to receive(:h).with(mock_component, {}, ["42"]).and_return(mock_vdom)
+        allow(mock_vdom).to receive(:h_fragment).with([mock_vdom]).and_return(mock_vdom)
 
         result = described_class.parse_and_eval(template, test_binding)
         expect(result).to eq(mock_vdom)
+      end
+    end
+
+    context 'when evaluating multiple top-level expressions' do
+      it 'wraps multiple expressions in a fragment' do
+        # Mock parse to return multiple expressions
+        allow(described_class).to receive(:parse).and_return('expr1,expr2')
+
+        # Mock eval to return the fragment
+        mock_fragment = double('fragment')
+        allow(described_class).to receive(:eval).with('RubyWasmUi::Vdom.h_fragment([expr1,expr2])', anything).and_return(mock_fragment)
+
+        result = described_class.parse_and_eval('<div>1</div><div>2</div>', binding)
+        expect(result).to eq(mock_fragment)
+      end
+
+      it 'wraps expressions containing end, in a fragment' do
+        # Mock parse to return expressions with 'end,'
+        allow(described_class).to receive(:parse).and_return('if condition then expr1 end,expr2')
+
+        # Mock eval to return the fragment
+        mock_fragment = double('fragment')
+        allow(described_class).to receive(:eval).with('RubyWasmUi::Vdom.h_fragment([if condition then expr1 end,expr2])', anything).and_return(mock_fragment)
+
+        result = described_class.parse_and_eval('<div r-if="{true}">content</div><div>other</div>', binding)
+        expect(result).to eq(mock_fragment)
+      end
+
+      it 'does not wrap single expression' do
+        # Mock parse to return single expression
+        allow(described_class).to receive(:parse).and_return('single_expr')
+
+        # Mock eval to return the expression directly
+        mock_result = double('result')
+        allow(described_class).to receive(:eval).with('single_expr', anything).and_return(mock_result)
+
+        result = described_class.parse_and_eval('<div>single</div>', binding)
+        expect(result).to eq(mock_result)
       end
     end
   end
@@ -770,6 +831,198 @@ RSpec.describe RubyWasmUi::Template::Parser do
         result = described_class.has_data_template_attribute?(mock_element)
         expect(result).to be true
       end
+    end
+  end
+
+  describe '.has_conditional_attribute?' do
+    let(:mock_element) { double('element') }
+    let(:mock_attributes) { double('attributes') }
+
+    context 'when element has r-if attribute' do
+      before do
+        allow(mock_element).to receive(:[]).with(:attributes).and_return(mock_attributes)
+        allow(mock_attributes).to receive(:[]).with(:length).and_return(1)
+        mock_attribute = double('attribute')
+        allow(mock_attributes).to receive(:[]).with(0).and_return(mock_attribute)
+        allow(mock_attribute).to receive(:[]).with(:name).and_return('r-if')
+      end
+
+      it 'returns true' do
+        result = described_class.has_conditional_attribute?(mock_element)
+        expect(result).to be true
+      end
+    end
+
+    context 'when element has r-elsif attribute' do
+      before do
+        allow(mock_element).to receive(:[]).with(:attributes).and_return(mock_attributes)
+        allow(mock_attributes).to receive(:[]).with(:length).and_return(1)
+        mock_attribute = double('attribute')
+        allow(mock_attributes).to receive(:[]).with(0).and_return(mock_attribute)
+        allow(mock_attribute).to receive(:[]).with(:name).and_return('r-elsif')
+      end
+
+      it 'returns true' do
+        result = described_class.has_conditional_attribute?(mock_element)
+        expect(result).to be true
+      end
+    end
+
+    context 'when element has r-else attribute' do
+      before do
+        allow(mock_element).to receive(:[]).with(:attributes).and_return(mock_attributes)
+        allow(mock_attributes).to receive(:[]).with(:length).and_return(1)
+        mock_attribute = double('attribute')
+        allow(mock_attributes).to receive(:[]).with(0).and_return(mock_attribute)
+        allow(mock_attribute).to receive(:[]).with(:name).and_return('r-else')
+      end
+
+      it 'returns true' do
+        result = described_class.has_conditional_attribute?(mock_element)
+        expect(result).to be true
+      end
+    end
+
+    context 'when element has no conditional attributes' do
+      before do
+        allow(mock_element).to receive(:[]).with(:attributes).and_return(mock_attributes)
+        allow(mock_attributes).to receive(:[]).with(:length).and_return(1)
+        mock_attribute = double('attribute')
+        allow(mock_attributes).to receive(:[]).with(0).and_return(mock_attribute)
+        allow(mock_attribute).to receive(:[]).with(:name).and_return('class')
+      end
+
+      it 'returns false' do
+        result = described_class.has_conditional_attribute?(mock_element)
+        expect(result).to be false
+      end
+    end
+
+    context 'when element has no attributes' do
+      before do
+        allow(mock_element).to receive(:[]).with(:attributes).and_return(nil)
+      end
+
+      it 'returns false' do
+        result = described_class.has_conditional_attribute?(mock_element)
+        expect(result).to be false
+      end
+    end
+  end
+
+  describe '.get_conditional_type' do
+    let(:mock_element) { double('element') }
+    let(:mock_attributes) { double('attributes') }
+
+    it 'returns r-if for r-if attribute' do
+      allow(mock_element).to receive(:[]).with(:attributes).and_return(mock_attributes)
+      allow(mock_attributes).to receive(:[]).with(:length).and_return(1)
+      mock_attribute = double('attribute')
+      allow(mock_attributes).to receive(:[]).with(0).and_return(mock_attribute)
+      allow(mock_attribute).to receive(:[]).with(:name).and_return('r-if')
+
+      result = described_class.get_conditional_type(mock_element)
+      expect(result).to eq('r-if')
+    end
+
+    it 'returns r-elsif for r-elsif attribute' do
+      allow(mock_element).to receive(:[]).with(:attributes).and_return(mock_attributes)
+      allow(mock_attributes).to receive(:[]).with(:length).and_return(1)
+      mock_attribute = double('attribute')
+      allow(mock_attributes).to receive(:[]).with(0).and_return(mock_attribute)
+      allow(mock_attribute).to receive(:[]).with(:name).and_return('r-elsif')
+
+      result = described_class.get_conditional_type(mock_element)
+      expect(result).to eq('r-elsif')
+    end
+
+    it 'returns r-else for r-else attribute' do
+      allow(mock_element).to receive(:[]).with(:attributes).and_return(mock_attributes)
+      allow(mock_attributes).to receive(:[]).with(:length).and_return(1)
+      mock_attribute = double('attribute')
+      allow(mock_attributes).to receive(:[]).with(0).and_return(mock_attribute)
+      allow(mock_attribute).to receive(:[]).with(:name).and_return('r-else')
+
+      result = described_class.get_conditional_type(mock_element)
+      expect(result).to eq('r-else')
+    end
+  end
+
+  describe '.get_conditional_expression' do
+    let(:mock_element) { double('element') }
+    let(:mock_attributes) { double('attributes') }
+
+    it 'extracts expression from r-if attribute' do
+      allow(mock_element).to receive(:[]).with(:attributes).and_return(mock_attributes)
+      allow(mock_attributes).to receive(:[]).with(:length).and_return(1)
+      mock_attribute = double('attribute')
+      allow(mock_attributes).to receive(:[]).with(0).and_return(mock_attribute)
+      allow(mock_attribute).to receive(:[]).with(:name).and_return('r-if')
+      allow(mock_attribute).to receive(:[]).with(:value).and_return('{condition}')
+
+      result = described_class.get_conditional_expression(mock_element)
+      expect(result).to eq('condition')
+    end
+
+    it 'extracts expression from r-elsif attribute' do
+      allow(mock_element).to receive(:[]).with(:attributes).and_return(mock_attributes)
+      allow(mock_attributes).to receive(:[]).with(:length).and_return(1)
+      mock_attribute = double('attribute')
+      allow(mock_attributes).to receive(:[]).with(0).and_return(mock_attribute)
+      allow(mock_attribute).to receive(:[]).with(:name).and_return('r-elsif')
+      allow(mock_attribute).to receive(:[]).with(:value).and_return('{another_condition}')
+
+      result = described_class.get_conditional_expression(mock_element)
+      expect(result).to eq('another_condition')
+    end
+
+    it 'returns true for r-else attribute' do
+      allow(mock_element).to receive(:[]).with(:attributes).and_return(mock_attributes)
+      allow(mock_attributes).to receive(:[]).with(:length).and_return(1)
+      mock_attribute = double('attribute')
+      allow(mock_attributes).to receive(:[]).with(0).and_return(mock_attribute)
+      allow(mock_attribute).to receive(:[]).with(:name).and_return('r-else')
+      allow(mock_attribute).to receive(:[]).with(:value).and_return('')
+
+      result = described_class.get_conditional_expression(mock_element)
+      expect(result).to eq('true')
+    end
+  end
+
+  describe '.filter_conditional_attributes' do
+    let(:mock_attributes) { double('attributes') }
+
+    it 'filters out conditional attributes' do
+      mock_attr1 = double('attr1')
+      mock_attr2 = double('attr2')
+      mock_attr3 = double('attr3')
+
+      allow(mock_attributes).to receive(:[]).with(:length).and_return(3)
+      allow(mock_attributes).to receive(:[]).with(0).and_return(mock_attr1)
+      allow(mock_attributes).to receive(:[]).with(1).and_return(mock_attr2)
+      allow(mock_attributes).to receive(:[]).with(2).and_return(mock_attr3)
+
+      allow(mock_attr1).to receive(:[]).with(:name).and_return('class')
+      allow(mock_attr2).to receive(:[]).with(:name).and_return('r-if')
+      allow(mock_attr3).to receive(:[]).with(:name).and_return('id')
+
+      result = described_class.filter_conditional_attributes(mock_attributes)
+      expect(result).to eq([mock_attr1, mock_attr3])
+    end
+
+    it 'filters out data-template attribute' do
+      mock_attr1 = double('attr1')
+      mock_attr2 = double('attr2')
+
+      allow(mock_attributes).to receive(:[]).with(:length).and_return(2)
+      allow(mock_attributes).to receive(:[]).with(0).and_return(mock_attr1)
+      allow(mock_attributes).to receive(:[]).with(1).and_return(mock_attr2)
+
+      allow(mock_attr1).to receive(:[]).with(:name).and_return('class')
+      allow(mock_attr2).to receive(:[]).with(:name).and_return('data-template')
+
+      result = described_class.filter_conditional_attributes(mock_attributes)
+      expect(result).to eq([mock_attr1])
     end
   end
 end
