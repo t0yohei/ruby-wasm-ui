@@ -96,16 +96,24 @@ Components support lifecycle hooks to execute code at specific points in a compo
 ```ruby
 RandomCocktailComponent = RubyWasmUi.define_component(
   state: ->(props) {
-    { cocktail: nil }
+    {
+      is_loading: false,
+      cocktail: nil
+    }
   },
 
   methods: {
     fetch_cocktail: -> {
+      # Set loading state
+      update_state(is_loading: true, cocktail: nil)
+
       # Use Fiber for asynchronous API call
       Fiber.new do
         response = JS.global.fetch("https://www.thecocktaildb.com/api/json/v1/1/random.php").await
         response.call(:json).then(->(data) {
-          update_state(cocktail: data[:drinks][0])
+          update_state(is_loading: false, cocktail: data[:drinks][0])
+        }).catch(->(error) {
+          update_state(is_loading: false, cocktail: nil)
         })
       end.transfer
     }
@@ -117,18 +125,27 @@ RandomCocktailComponent = RubyWasmUi.define_component(
   },
 
   render: ->(component) {
-    cocktail = component.state[:cocktail]
+    is_loading = component.state[:is_loading] # Used in template
+    cocktail = component.state[:cocktail] # Used in template
 
-    if cocktail.nil?
-      RubyWasmUi::Vdom.h("div", {}, ["Loading..."])
-    else
-      RubyWasmUi::Vdom.h("div", {}, [
-        RubyWasmUi::Vdom.h("h2", {}, [cocktail["strDrink"]]),
-        RubyWasmUi::Vdom.h("button", {
-          on: { click: ->(e) { component.fetch_cocktail } }
-        }, ["Get another cocktail"])
-      ])
-    end
+    template = <<~HTML
+      <div>
+        <p r-if="{is_loading}">Loading...</p>
+        <button r-elsif="{cocktail.nil?}" on="{click: ->(e) { component.fetch_cocktail }}">
+          Get a cocktail
+        </button>
+        <template r-else>
+          <h2>{cocktail['strDrink']}</h2>
+          <p>{cocktail['strInstructions']}</p>
+          <img src="{cocktail['strDrinkThumb']}" alt="{cocktail['strDrink']}" style="width: 300px; height: 300px" />
+          <button on="{click: ->(e) { component.fetch_cocktail }}">
+            Get another cocktail
+          </button>
+        </template>
+      </div>
+    HTML
+
+    RubyWasmUi::Template::Parser.parse_and_eval(template, binding)
   }
 )
 ```
