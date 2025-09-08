@@ -3,6 +3,107 @@
 require 'spec_helper'
 
 RSpec.describe RubyWasmUi::Template::Parser do
+  describe '.preprocess_pascal_case_component_name' do
+    context 'when processing PascalCase component names' do
+      it 'converts simple PascalCase component name' do
+        input = '<ButtonComponent>Click me</ButtonComponent>'
+        expected = '<button-component>Click me</button-component>'
+        result = described_class.preprocess_pascal_case_component_name(input)
+        expect(result).to eq(expected)
+      end
+
+      it 'converts component with attributes' do
+        input = '<ButtonComponent class="primary" disabled>Click me</ButtonComponent>'
+        expected = '<button-component class="primary" disabled>Click me</button-component>'
+        result = described_class.preprocess_pascal_case_component_name(input)
+        expect(result).to eq(expected)
+      end
+
+      it 'converts self-closing component' do
+        input = '<SearchField placeholder="Search..." />'
+        expected = '<search-field placeholder="Search..." />'
+        result = described_class.preprocess_pascal_case_component_name(input)
+        expect(result).to eq(expected)
+      end
+
+      it 'converts multiple components in the same template' do
+        input = '<ButtonComponent><SearchField /><IconComponent name="search" /></ButtonComponent>'
+        expected = '<button-component><search-field /><icon-component name="search" /></button-component>'
+        result = described_class.preprocess_pascal_case_component_name(input)
+        expect(result).to eq(expected)
+      end
+
+      it 'converts components with complex PascalCase names' do
+        input = '<TodoListItemComponent><UserProfileCardComponent /></TodoListItemComponent>'
+        expected = '<todo-list-item-component><user-profile-card-component /></todo-list-item-component>'
+        result = described_class.preprocess_pascal_case_component_name(input)
+        expect(result).to eq(expected)
+      end
+
+      it 'handles components with embedded Ruby expressions' do
+        input = '<ButtonComponent on="{ click: ->(e) { handle_click(e) } }">Count: {count}</ButtonComponent>'
+        expected = '<button-component on="{ click: ->(e) { handle_click(e) } }">Count: {count}</button-component>'
+        result = described_class.preprocess_pascal_case_component_name(input)
+        expect(result).to eq(expected)
+      end
+    end
+
+    context 'when processing mixed content' do
+      it 'does not convert regular HTML elements' do
+        input = '<div><span>Text</span><ButtonComponent>Click me</ButtonComponent></div>'
+        expected = '<div><span>Text</span><button-component>Click me</button-component></div>'
+        result = described_class.preprocess_pascal_case_component_name(input)
+        expect(result).to eq(expected)
+      end
+
+      it 'preserves existing kebab-case components' do
+        input = '<custom-button><ButtonComponent>Click me</ButtonComponent></custom-button>'
+        expected = '<custom-button><button-component>Click me</button-component></custom-button>'
+        result = described_class.preprocess_pascal_case_component_name(input)
+        expect(result).to eq(expected)
+      end
+    end
+  end
+
+  describe '.preprocess_template_tag' do
+    context 'when processing template tags' do
+      it 'converts simple template tag' do
+        input = '<template>Hello World</template>'
+        expected = '<div data-template>Hello World</div>'
+        result = described_class.preprocess_template_tag(input)
+        expect(result).to eq(expected)
+      end
+
+      it 'converts template tag with attributes' do
+        input = '<template class="container" data-test="value">Content</template>'
+        expected = '<div data-template class="container" data-test="value">Content</div>'
+        result = described_class.preprocess_template_tag(input)
+        expect(result).to eq(expected)
+      end
+
+      it 'converts nested template tags' do
+        input = '<template><template>Nested</template></template>'
+        expected = '<div data-template><div data-template>Nested</div></div>'
+        result = described_class.preprocess_template_tag(input)
+        expect(result).to eq(expected)
+      end
+
+      it 'converts template tags with complex content' do
+        input = '<template><div>Text</div><ButtonComponent>Click</ButtonComponent></template>'
+        expected = '<div data-template><div>Text</div><ButtonComponent>Click</ButtonComponent></div>'
+        result = described_class.preprocess_template_tag(input)
+        expect(result).to eq(expected)
+      end
+
+      it 'preserves whitespace and indentation' do
+        input = "  <template>\n    <div>Content</div>\n  </template>"
+        expected = "  <div data-template>\n    <div>Content</div>\n  </div>"
+        result = described_class.preprocess_template_tag(input)
+        expect(result).to eq(expected)
+      end
+    end
+  end
+
   describe '.preprocess_self_closing_tags' do
     context 'when processing custom elements with self-closing tags' do
       it 'converts simple custom element self-closing tag' do

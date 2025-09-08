@@ -47,10 +47,11 @@ CounterComponent = RubyWasmUi.define_component(
     RubyWasmUi::Template::Parser.parse_and_eval(<<~HTML, binding)
       <div>
         <div>{component.state[:count]}</div>
-        <button-component
+        <!-- Both ButtonComponent and button-component are valid -->
+        <ButtonComponent
           label="Increment"
           on="{ click_button: -> { component.increment } }">
-        </button-component>
+        </ButtonComponent>
         <button-component
           label="Decrement"
           on="{ click_button: -> { component.decrement } }"
