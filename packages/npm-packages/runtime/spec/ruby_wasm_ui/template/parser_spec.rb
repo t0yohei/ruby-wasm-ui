@@ -65,6 +65,45 @@ RSpec.describe RubyWasmUi::Template::Parser do
     end
   end
 
+  describe '.preprocess_template_tag' do
+    context 'when processing template tags' do
+      it 'converts simple template tag' do
+        input = '<template>Hello World</template>'
+        expected = '<div data-template>Hello World</div>'
+        result = described_class.preprocess_template_tag(input)
+        expect(result).to eq(expected)
+      end
+
+      it 'converts template tag with attributes' do
+        input = '<template class="container" data-test="value">Content</template>'
+        expected = '<div data-template class="container" data-test="value">Content</div>'
+        result = described_class.preprocess_template_tag(input)
+        expect(result).to eq(expected)
+      end
+
+      it 'converts nested template tags' do
+        input = '<template><template>Nested</template></template>'
+        expected = '<div data-template><div data-template>Nested</div></div>'
+        result = described_class.preprocess_template_tag(input)
+        expect(result).to eq(expected)
+      end
+
+      it 'converts template tags with complex content' do
+        input = '<template><div>Text</div><ButtonComponent>Click</ButtonComponent></template>'
+        expected = '<div data-template><div>Text</div><ButtonComponent>Click</ButtonComponent></div>'
+        result = described_class.preprocess_template_tag(input)
+        expect(result).to eq(expected)
+      end
+
+      it 'preserves whitespace and indentation' do
+        input = "  <template>\n    <div>Content</div>\n  </template>"
+        expected = "  <div data-template>\n    <div>Content</div>\n  </div>"
+        result = described_class.preprocess_template_tag(input)
+        expect(result).to eq(expected)
+      end
+    end
+  end
+
   describe '.preprocess_self_closing_tags' do
     context 'when processing custom elements with self-closing tags' do
       it 'converts simple custom element self-closing tag' do

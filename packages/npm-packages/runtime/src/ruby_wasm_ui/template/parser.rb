@@ -29,9 +29,7 @@ module RubyWasmUi
         processed_template = preprocess_pascal_case_component_name(processed_template)
 
         # Replace <template> with <div data-template> to work around DOMParser limitations
-        processed_template = processed_template.gsub(/<template\s/, '<div data-template ')
-        processed_template = processed_template.gsub(/<template>/, '<div data-template>')
-        processed_template = processed_template.gsub(/<\/template>/, '</div>')
+        processed_template = preprocess_template_tag(processed_template)
 
         parser = JS.eval('return new DOMParser()')
         document = parser.call(:parseFromString, JS.try_convert(processed_template), 'text/html')
@@ -83,6 +81,24 @@ module RubyWasmUi
 
           "</#{kebab_name}>"
         end
+
+        processed_template
+      end
+
+      # Replace <template> tags with <div data-template> to work around DOMParser limitations
+      # @param template [String]
+      # @return [String]
+      def preprocess_template_tag(template)
+        processed_template = template.dup
+
+        # Replace <template> with attributes (e.g., <template class="container">)
+        processed_template = processed_template.gsub(/<template\s/, '<div data-template ')
+
+        # Replace simple <template> without attributes
+        processed_template = processed_template.gsub(/<template>/, '<div data-template>')
+
+        # Replace closing tag
+        processed_template = processed_template.gsub(/<\/template>/, '</div>')
 
         processed_template
       end
