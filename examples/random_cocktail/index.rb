@@ -16,7 +16,7 @@ random_cocktail = RubyWasmUi.define_component(
       <p r-if="{is_loading}">
         Loading...
       </p>
-      <button-component r-elsif="{cocktail.nil?}" on="{click_button: ->(e) { component.fetch_cocktail }}" label="Get a cocktail"/>
+      <button-component r-elsif="{cocktail.nil?}" on="{click_button: ->() { component.fetch_cocktail }}" label="Get a cocktail"/>
       <template r-else>
         <h1>{cocktail['strDrink']}</h1>
         <p>{cocktail['strInstructions']}</p>
@@ -56,7 +56,7 @@ ButtonComponent = RubyWasmUi.define_component(
 
   render: ->(component) {
     RubyWasmUi::Template::Parser.parse_and_eval(<<~HTML, binding)
-      <button on="{click: ->(e) { component.emit('click_button', e) }}" style="display: block; margin: 1em auto">
+      <button on="{click: ->() { component.emit('click_button') }}" style="display: block; margin: 1em auto">
         {component.state[:label]}
       </button>
     HTML
