@@ -21,7 +21,7 @@ Create an HTML file:
 <!DOCTYPE html>
 <html>
   <head>
-    <script src="https://unpkg.com/ruby-wasm-ui@0.2.0"></script>
+    <script src="https://unpkg.com/ruby-wasm-ui@0.5.0"></script>
     <script defer type="text/ruby" src="app.rb"></script>
   </head>
   <body>
