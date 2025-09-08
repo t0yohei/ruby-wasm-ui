@@ -133,6 +133,41 @@ RSpec.describe RubyWasmUi do
   end
 
   describe RubyWasmUi::Component do
+    describe '#emit' do
+      let(:render) { -> { 'content' } }
+      let(:component_class) { RubyWasmUi.define_component(render:) }
+      let(:event_name) { 'test_event' }
+
+      context 'when dispatcher is set' do
+        it 'dispatches event with payload' do
+          component = component_class.new
+          dispatcher = component.instance_variable_get(:@dispatcher)
+          payload = { value: 42 }
+
+          expect(dispatcher).to receive(:dispatch).with(event_name, payload)
+          component.emit(event_name, payload)
+        end
+
+        it 'dispatches event without payload (nil by default)' do
+          component = component_class.new
+          dispatcher = component.instance_variable_get(:@dispatcher)
+
+          expect(dispatcher).to receive(:dispatch).with(event_name, nil)
+          component.emit(event_name)
+        end
+      end
+
+      context 'when dispatcher is not set' do
+        it 'does not raise error' do
+          component = component_class.new
+          component.instance_variable_set(:@dispatcher, nil)
+
+          expect { component.emit(event_name) }.not_to raise_error
+          expect { component.emit(event_name, { value: 42 }) }.not_to raise_error
+        end
+      end
+    end
+
     describe '#wire_event_handler' do
       let(:render) { -> { 'content' } }
       let(:component_class) { RubyWasmUi.define_component(render:) }

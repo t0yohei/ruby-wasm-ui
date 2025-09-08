@@ -144,8 +144,8 @@ module RubyWasmUi
 
     # Emit an event
     # @param event_name [String] Event name
-    # @param payload [Object] Event payload
-    def emit(event_name, payload)
+    # @param payload [Object, nil] Event payload
+    def emit(event_name, payload = nil)
       @dispatcher.dispatch(event_name, payload) if @dispatcher
     end
 

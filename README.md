@@ -39,7 +39,7 @@ require "js"
 CounterComponent = RubyWasmUi.define_component(
   # Initialize component state
   state: ->(props) {
-    { count: 0 }
+    { count: props[:count] || 0 }
   },
 
   # Render the counter component
@@ -76,7 +76,7 @@ CounterComponent = RubyWasmUi.define_component(
 ButtonComponent = RubyWasmUi.define_component(
   render: ->(component) {
     RubyWasmUi::Template::Parser.parse_and_eval(<<~HTML, binding)
-      <button on="{ click: ->(e) { component.emit('click_button', e) } }">
+      <button on="{ click: ->() { component.emit('click_button') } }">
         {component.props[:label]}
       </button>
     HTML
@@ -84,7 +84,7 @@ ButtonComponent = RubyWasmUi.define_component(
 )
 
 # Create and mount the app
-app = RubyWasmUi::App.create(CounterComponent)
+app = RubyWasmUi::App.create(CounterComponent, count: 5)
 app_element = JS.global[:document].getElementById("app")
 app.mount(app_element)
 ```
@@ -95,7 +95,7 @@ Components support lifecycle hooks to execute code at specific points in a compo
 
 ```ruby
 RandomCocktailComponent = RubyWasmUi.define_component(
-  state: ->(props) {
+  state: ->() {
     {
       is_loading: false,
       cocktail: nil
@@ -131,14 +131,14 @@ RandomCocktailComponent = RubyWasmUi.define_component(
     template = <<~HTML
       <div>
         <p r-if="{is_loading}">Loading...</p>
-        <button r-elsif="{cocktail.nil?}" on="{click: ->(e) { component.fetch_cocktail }}">
+        <button r-elsif="{cocktail.nil?}" on="{click: ->() { component.fetch_cocktail }}">
           Get a cocktail
         </button>
         <template r-else>
           <h2>{cocktail['strDrink']}</h2>
           <p>{cocktail['strInstructions']}</p>
           <img src="{cocktail['strDrinkThumb']}" alt="{cocktail['strDrink']}" style="width: 300px; height: 300px" />
-          <button on="{click: ->(e) { component.fetch_cocktail }}">
+          <button on="{click: ->() { component.fetch_cocktail }}">
             Get another cocktail
           </button>
         </template>

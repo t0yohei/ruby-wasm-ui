@@ -4,7 +4,7 @@ require "js"
 CounterComponent = RubyWasmUi.define_component(
   # Initialize component state
   state: ->(props) {
-    { count: props[:count] }
+    { count: props[:count] || 0 }
   },
 
   # Render the counter component
@@ -44,7 +44,7 @@ CounterComponent = RubyWasmUi.define_component(
 ButtonComponent = RubyWasmUi.define_component(
   render: ->(component) {
     RubyWasmUi::Template::Parser.parse_and_eval(<<~HTML, binding)
-      <button on="{ click: ->(e) { component.emit('click_button', e) } }">
+      <button on="{ click: ->() { component.emit('click_button') } }">
         {component.props[:label]}
       </button>
     HTML

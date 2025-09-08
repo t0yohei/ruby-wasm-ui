@@ -3,7 +3,7 @@ require "js"
 # R-If Attribute Demo component to demonstrate conditional rendering using r-if attribute
 RIfAttributeDemo = RubyWasmUi.define_component(
   # Initialize component state
-  state: ->(props) {
+  state: ->() {
     {
       show_message: false,
       counter: 0
@@ -23,7 +23,7 @@ RIfAttributeDemo = RubyWasmUi.define_component(
           <h2>Toggle Message</h2>
           <button
             style="background: #007bff; color: white; padding: 8px 16px; border: none; cursor: pointer;"
-            on="{click: ->(e) { component.toggle_message }}"
+            on="{click: ->() { component.toggle_message }}"
           >
             {state[:show_message] ? "Hide" : "Show"} Message
           </button>
@@ -41,19 +41,19 @@ RIfAttributeDemo = RubyWasmUi.define_component(
           <h2>Counter Conditions</h2>
           <button
             style="background: #28a745; color: white; padding: 8px 16px; border: none; cursor: pointer; margin-right: 5px;"
-            on="{click: ->(e) { component.increment_counter }}"
+            on="{click: ->() { component.increment_counter }}"
           >
             +1
           </button>
           <button
             style="background: #dc3545; color: white; padding: 8px 16px; border: none; cursor: pointer; margin-right: 5px;"
-            on="{click: ->(e) { component.decrement_counter }}"
+            on="{click: ->() { component.decrement_counter }}"
           >
             -1
           </button>
           <button
             style="background: #6c757d; color: white; padding: 8px 16px; border: none; cursor: pointer;"
-            on="{click: ->(e) { component.reset_counter }}"
+            on="{click: ->() { component.reset_counter }}"
           >
             Reset
           </button>
