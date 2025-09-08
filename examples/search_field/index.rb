@@ -16,7 +16,7 @@ SearchField = RubyWasmUi.define_component(
 
 # search-demo component to show the search functionality
 SearchDemo = RubyWasmUi.define_component(
-  state: ->(props) {
+  state: ->() {
     { search_term: '' }
   },
   render: ->(component) {

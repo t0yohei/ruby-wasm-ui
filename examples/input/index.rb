@@ -3,7 +3,7 @@ require "js"
 # input-form component using the latest component-based API
 InputForm = RubyWasmUi.define_component(
   # Initialize component state
-  state: ->(props) {
+  state: ->() {
     {
       url_name: '',
       is_valid: false

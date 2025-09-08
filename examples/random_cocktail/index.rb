@@ -1,7 +1,7 @@
 require "js"
 
 random_cocktail = RubyWasmUi.define_component(
-  state: ->(props) {
+  state: ->() {
     {
       is_loading: false,
       cocktail: nil
