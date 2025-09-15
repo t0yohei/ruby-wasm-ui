@@ -23,6 +23,83 @@ RSpec.describe RubyWasmUi do
         instance = component_class.new
         expect(instance.render).to eq('rendered without args')
       end
+
+      it 'can access component state and props in render proc without arguments' do
+        component_class = RubyWasmUi.define_component(
+          render: -> { "count: #{@state[:count]}, name: #{@props[:name]}" },
+          state: -> { { count: 5 } }
+        )
+        instance = component_class.new(name: 'test')
+        expect(instance.render).to eq('count: 5, name: test')
+      end
+
+      it 'can access component methods in render proc without arguments' do
+        component_class = RubyWasmUi.define_component(
+          render: -> { helper_method },
+          methods: {
+            helper_method: -> { 'helper result' }
+          }
+        )
+        instance = component_class.new
+        expect(instance.render).to eq('helper result')
+      end
+
+      it 'passes correct component instance when render proc has arguments' do
+        received_component = nil
+        component_class = RubyWasmUi.define_component(
+          render: ->(component) {
+            received_component = component
+            'rendered'
+          }
+        )
+        instance = component_class.new
+        instance.render
+        expect(received_component).to eq(instance)
+      end
+
+      it 'handles render proc with variable arity correctly' do
+        # Test with proc that can accept 0 or more arguments
+        component_class = RubyWasmUi.define_component(
+          render: ->(*args) { "args count: #{args.length}" }
+        )
+        instance = component_class.new
+        # Variable arity procs (arity < 0) should be called with component argument
+        expect(instance.render).to eq('args count: 1')
+      end
+
+      it 'works with Vdom.h in render proc without arguments' do
+        component_class = RubyWasmUi.define_component(
+          render: -> {
+            RubyWasmUi::Vdom.h('div', {}, ["Hello #{@props[:name]}"])
+          },
+          state: -> { { count: 0 } }
+        )
+        instance = component_class.new(name: 'World')
+        result = instance.render
+        expect(result).to be_a(RubyWasmUi::Vdom)
+        expect(result.tag).to eq('div')
+        expect(result.children.length).to eq(1)
+        expect(result.children.first).to be_a(RubyWasmUi::Vdom)
+        expect(result.children.first.type).to eq('text')
+        expect(result.children.first.value).to eq('Hello World')
+      end
+
+      it 'works with Vdom.h in render proc with component argument' do
+        component_class = RubyWasmUi.define_component(
+          render: ->(component) {
+            RubyWasmUi::Vdom.h('div', {}, ["Count: #{component.state[:count]}"])
+          },
+          state: -> { { count: 42 } }
+        )
+        instance = component_class.new
+        result = instance.render
+        expect(result).to be_a(RubyWasmUi::Vdom)
+        expect(result.tag).to eq('div')
+        expect(result.children.length).to eq(1)
+        expect(result.children.first).to be_a(RubyWasmUi::Vdom)
+        expect(result.children.first.type).to eq('text')
+        expect(result.children.first.value).to eq('Count: 42')
+      end
     end
 
     context 'with state proc' do
