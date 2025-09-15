@@ -143,37 +143,37 @@ RSpec.describe RubyWasmUi::Template::Parser do
     end
 
     context 'when processing PascalCase components with self-closing tags' do
-      it 'converts simple PascalCase component self-closing tag' do
+      it 'does not convert PascalCase component self-closing tag (handled by pascal case preprocessor)' do
         input = '<TodoItemEditComponent edited="test" />'
-        expected = '<TodoItemEditComponent edited="test" ></TodoItemEditComponent>'
+        expected = '<TodoItemEditComponent edited="test" />'
         result = described_class.preprocess_self_closing_tags(input)
         expect(result).to eq(expected)
       end
 
-      it 'converts PascalCase component with multiple attributes' do
+      it 'does not convert PascalCase component with multiple attributes (handled by pascal case preprocessor)' do
         input = '<SearchFieldComponent id="1" placeholder="Search..." value="test" />'
-        expected = '<SearchFieldComponent id="1" placeholder="Search..." value="test" ></SearchFieldComponent>'
+        expected = '<SearchFieldComponent id="1" placeholder="Search..." value="test" />'
         result = described_class.preprocess_self_closing_tags(input)
         expect(result).to eq(expected)
       end
 
-      it 'converts multiple PascalCase components' do
+      it 'does not convert multiple PascalCase components (handled by pascal case preprocessor)' do
         input = '<ButtonComponent /><InputComponent type="text" />'
-        expected = '<ButtonComponent ></ButtonComponent><InputComponent type="text" ></InputComponent>'
+        expected = '<ButtonComponent /><InputComponent type="text" />'
         result = described_class.preprocess_self_closing_tags(input)
         expect(result).to eq(expected)
       end
 
-      it 'handles PascalCase components with complex attributes including lambdas' do
+      it 'does not handle PascalCase components with complex attributes (handled by pascal case preprocessor)' do
         input = '<TodoItemEditComponent edited="{component.state[:edited]}" on="{ save: ->() { component.save_edition } }" />'
-        expected = '<TodoItemEditComponent edited="{component.state[:edited]}" on="{ save: ->() { component.save_edition } }" ></TodoItemEditComponent>'
+        expected = '<TodoItemEditComponent edited="{component.state[:edited]}" on="{ save: ->() { component.save_edition } }" />'
         result = described_class.preprocess_self_closing_tags(input)
         expect(result).to eq(expected)
       end
 
-      it 'handles PascalCase components with r-if attributes' do
+      it 'does not handle PascalCase components with r-if attributes (handled by pascal case preprocessor)' do
         input = '<TodoItemEditComponent r-if="{component.state[:is_editing]}" edited="{component.state[:edited]}" />'
-        expected = '<TodoItemEditComponent r-if="{component.state[:is_editing]}" edited="{component.state[:edited]}" ></TodoItemEditComponent>'
+        expected = '<TodoItemEditComponent r-if="{component.state[:is_editing]}" edited="{component.state[:edited]}" />'
         result = described_class.preprocess_self_closing_tags(input)
         expect(result).to eq(expected)
       end
@@ -226,8 +226,10 @@ RSpec.describe RubyWasmUi::Template::Parser do
     let(:mock_child_nodes) { double('child_nodes') }
 
     before do
-      # Mock preprocess_self_closing_tags to return processed template
-      allow(described_class).to receive(:preprocess_self_closing_tags).with('template_string').and_return('processed_template')
+      # Mock preprocessing chain in the correct order
+      allow(described_class).to receive(:preprocess_template_tag).with('template_string').and_return('after_template_processing')
+      allow(described_class).to receive(:preprocess_pascal_case_component_name).with('after_template_processing').and_return('after_pascal_processing')
+      allow(described_class).to receive(:preprocess_self_closing_tags).with('after_pascal_processing').and_return('processed_template')
 
       # Mock JS.eval and DOMParser
       js_mock = double('JS')
@@ -243,8 +245,10 @@ RSpec.describe RubyWasmUi::Template::Parser do
       allow(mock_child_nodes).to receive(:[]).with(:length).and_return(0)
     end
 
-    it 'preprocesses self-closing tags before parsing' do
-      expect(described_class).to receive(:preprocess_self_closing_tags).with('template_string')
+    it 'preprocesses template, pascal case, then self-closing tags in correct order' do
+      expect(described_class).to receive(:preprocess_template_tag).with('template_string').and_return('after_template_processing')
+      expect(described_class).to receive(:preprocess_pascal_case_component_name).with('after_template_processing').and_return('after_pascal_processing')
+      expect(described_class).to receive(:preprocess_self_closing_tags).with('after_pascal_processing').and_return('processed_template')
       described_class.parse('template_string')
     end
 
@@ -258,11 +262,10 @@ RSpec.describe RubyWasmUi::Template::Parser do
         template = '<template><div>content</div></template>'
         expected_replacement = '<div data-template><div>content</div></div>'
 
-        # Mock the replacement processing
-        allow(described_class).to receive(:preprocess_self_closing_tags).with(template).and_return(template)
-
-        # Verify the template replacement happens
-        expect(described_class).to receive(:preprocess_self_closing_tags).with(template).and_return(template)
+        # Mock the preprocessing chain
+        allow(described_class).to receive(:preprocess_template_tag).with(template).and_return(expected_replacement)
+        allow(described_class).to receive(:preprocess_pascal_case_component_name).with(expected_replacement).and_return(expected_replacement)
+        allow(described_class).to receive(:preprocess_self_closing_tags).with(expected_replacement).and_return(expected_replacement)
 
         # Mock JS components to avoid actual parsing
         js_mock = double('JS')
@@ -285,8 +288,10 @@ RSpec.describe RubyWasmUi::Template::Parser do
         template = '<template class="container"><div>content</div></template>'
         expected_replacement = '<div data-template class="container"><div>content</div></div>'
 
-        # Mock the replacement processing
-        allow(described_class).to receive(:preprocess_self_closing_tags).with(template).and_return(template)
+        # Mock the preprocessing chain
+        allow(described_class).to receive(:preprocess_template_tag).with(template).and_return(expected_replacement)
+        allow(described_class).to receive(:preprocess_pascal_case_component_name).with(expected_replacement).and_return(expected_replacement)
+        allow(described_class).to receive(:preprocess_self_closing_tags).with(expected_replacement).and_return(expected_replacement)
 
         # Mock JS components to avoid actual parsing
         js_mock = double('JS')
@@ -316,7 +321,9 @@ RSpec.describe RubyWasmUi::Template::Parser do
     let(:mock_vdom) { double('vdom') }
 
     before do
-      # Mock preprocess_self_closing_tags
+      # Mock preprocessing chain
+      allow(described_class).to receive(:preprocess_template_tag).with(anything).and_return('after_template_processing')
+      allow(described_class).to receive(:preprocess_pascal_case_component_name).with(anything).and_return('after_pascal_processing')
       allow(described_class).to receive(:preprocess_self_closing_tags).with(anything).and_return('processed_template')
 
       # Mock JS.eval, DOMParser, and JS.global
@@ -482,6 +489,50 @@ RSpec.describe RubyWasmUi::Template::Parser do
 
         result = described_class.parse_and_eval('<div>single</div>', binding)
         expect(result).to eq(mock_result)
+      end
+    end
+  end
+
+  describe 'integration tests for preprocessing chain' do
+    context 'when processing PascalCase components with self-closing tags' do
+      it 'converts PascalCase to kebab-case then handles self-closing tags' do
+        template = '<SearchField placeholder="test" />'
+
+        # This should first convert to kebab-case, then handle self-closing
+        result = described_class.preprocess_pascal_case_component_name(template)
+        expect(result).to eq('<search-field placeholder="test" />')
+
+        # Then the self-closing tag should be processed
+        final_result = described_class.preprocess_self_closing_tags(result)
+        expect(final_result).to eq('<search-field placeholder="test" ></search-field>')
+      end
+
+      it 'handles complex PascalCase components with attributes' do
+        template = '<TodoItemEditComponent r-if="{editing}" edited="{value}" on="{ save: ->() { save() } }" />'
+
+        # First convert to kebab-case
+        result = described_class.preprocess_pascal_case_component_name(template)
+        expect(result).to eq('<todo-item-edit-component r-if="{editing}" edited="{value}" on="{ save: ->() { save() } }" />')
+
+        # Then handle self-closing tag
+        final_result = described_class.preprocess_self_closing_tags(result)
+        expect(final_result).to eq('<todo-item-edit-component r-if="{editing}" edited="{value}" on="{ save: ->() { save() } }" ></todo-item-edit-component>')
+      end
+
+      it 'handles template tags with PascalCase components' do
+        template = '<template><ButtonComponent>Click me</ButtonComponent></template>'
+
+        # First process template tag
+        result = described_class.preprocess_template_tag(template)
+        expect(result).to eq('<div data-template><ButtonComponent>Click me</ButtonComponent></div>')
+
+        # Then convert PascalCase
+        result = described_class.preprocess_pascal_case_component_name(result)
+        expect(result).to eq('<div data-template><button-component>Click me</button-component></div>')
+
+        # Self-closing processing doesn't affect this case
+        final_result = described_class.preprocess_self_closing_tags(result)
+        expect(final_result).to eq('<div data-template><button-component>Click me</button-component></div>')
       end
     end
   end
