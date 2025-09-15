@@ -142,6 +142,43 @@ RSpec.describe RubyWasmUi::Template::Parser do
       end
     end
 
+    context 'when processing PascalCase components with self-closing tags' do
+      it 'converts simple PascalCase component self-closing tag' do
+        input = '<TodoItemEditComponent edited="test" />'
+        expected = '<TodoItemEditComponent edited="test" ></TodoItemEditComponent>'
+        result = described_class.preprocess_self_closing_tags(input)
+        expect(result).to eq(expected)
+      end
+
+      it 'converts PascalCase component with multiple attributes' do
+        input = '<SearchFieldComponent id="1" placeholder="Search..." value="test" />'
+        expected = '<SearchFieldComponent id="1" placeholder="Search..." value="test" ></SearchFieldComponent>'
+        result = described_class.preprocess_self_closing_tags(input)
+        expect(result).to eq(expected)
+      end
+
+      it 'converts multiple PascalCase components' do
+        input = '<ButtonComponent /><InputComponent type="text" />'
+        expected = '<ButtonComponent ></ButtonComponent><InputComponent type="text" ></InputComponent>'
+        result = described_class.preprocess_self_closing_tags(input)
+        expect(result).to eq(expected)
+      end
+
+      it 'handles PascalCase components with complex attributes including lambdas' do
+        input = '<TodoItemEditComponent edited="{component.state[:edited]}" on="{ save: ->() { component.save_edition } }" />'
+        expected = '<TodoItemEditComponent edited="{component.state[:edited]}" on="{ save: ->() { component.save_edition } }" ></TodoItemEditComponent>'
+        result = described_class.preprocess_self_closing_tags(input)
+        expect(result).to eq(expected)
+      end
+
+      it 'handles PascalCase components with r-if attributes' do
+        input = '<TodoItemEditComponent r-if="{component.state[:is_editing]}" edited="{component.state[:edited]}" />'
+        expected = '<TodoItemEditComponent r-if="{component.state[:is_editing]}" edited="{component.state[:edited]}" ></TodoItemEditComponent>'
+        result = described_class.preprocess_self_closing_tags(input)
+        expect(result).to eq(expected)
+      end
+    end
+
     context 'when processing standard HTML elements' do
       it 'does not convert standard HTML void elements' do
         input = '<input type="text" />'

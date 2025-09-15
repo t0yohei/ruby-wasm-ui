@@ -130,23 +130,11 @@ module RubyWasmUi
       # @param tag_name [String]
       # @return [Boolean]
       def is_component?(tag_name)
-        # Component tags start with  letter but exclude standard HTML elements
+        # Component tags start with letter but exclude standard HTML elements
         return false unless tag_name.match?(/^[a-z]/)
 
-        # List of standard HTML elements (case-sensitive comparison)
-        # List of standard HTML elements in lowercase for case-insensitive comparison
-        html_elements = %w[
-          a abbr address area article aside audio b base bdi bdo blockquote body br button
-          canvas caption cite code col colgroup data datalist dd del details dfn dialog div dl dt
-          em embed fieldset figcaption figure footer form h1 h2 h3 h4 h5 h6 head header hgroup hr html
-          i iframe img input ins kbd label legend li link main map mark menu meta meter nav noscript
-          object ol optgroup option output p param picture pre progress q rp rt ruby s samp script
-          section select small source span strong style sub summary sup table tbody td template
-          textarea tfoot th thead time title tr track u ul var video wbr
-        ]
-
-        # Convert tag_name to lowercase for case-insensitive comparison with standard HTML elements
-        !html_elements.include?(tag_name)
+        # Use the standard HTML elements list from Parser module
+        !RubyWasmUi::Template::Parser::STANDARD_HTML_ELEMENTS.include?(tag_name)
       end
 
       # @param doc [String]
