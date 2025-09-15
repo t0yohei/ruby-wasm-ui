@@ -13,8 +13,8 @@ AppComponent = RubyWasmUi.define_component(
     }
   },
 
-  on_mounted: ->(component) {
-    component.update_state(todos: TodosRepository.read_todos)
+  on_mounted: -> {
+    update_state(todos: TodosRepository.read_todos)
   },
 
   # Render the complete application

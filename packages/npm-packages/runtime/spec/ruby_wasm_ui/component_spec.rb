@@ -130,6 +130,126 @@ RSpec.describe RubyWasmUi do
         expect(instance).to be_a(RubyWasmUi::Component)
       end
     end
+
+    context 'with on_mounted parameter' do
+      it 'works with on_mounted proc that accepts component argument' do
+        mounted_called = false
+        received_component = nil
+
+        component_class = RubyWasmUi.define_component(
+          render: -> { 'content' },
+          on_mounted: ->(component) {
+            mounted_called = true
+            received_component = component
+          }
+        )
+
+        instance = component_class.new
+        instance.on_mounted
+
+        expect(mounted_called).to be true
+        expect(received_component).to eq(instance)
+      end
+
+      it 'works with on_mounted proc that accepts no arguments' do
+        mounted_called = false
+        
+        component_class = RubyWasmUi.define_component(
+          render: -> { 'content' },
+          on_mounted: -> { 
+            mounted_called = true
+          }
+        )
+        
+        instance = component_class.new
+        instance.on_mounted
+        
+        expect(mounted_called).to be true
+      end
+
+      it 'allows calling component methods directly in on_mounted without arguments' do
+        method_called_with_self = nil
+        
+        component_class = RubyWasmUi.define_component(
+          render: -> { 'content' },
+          on_mounted: -> { 
+            method_called_with_self = self
+          }
+        )
+        
+        instance = component_class.new
+        instance.on_mounted
+        
+        expect(method_called_with_self).to eq(instance)
+      end
+
+      it 'uses default empty proc when on_mounted is not provided' do
+        component_class = RubyWasmUi.define_component(render: -> { 'content' })
+        instance = component_class.new
+
+        expect { instance.on_mounted }.not_to raise_error
+      end
+    end
+
+    context 'with on_unmounted parameter' do
+      it 'works with on_unmounted proc that accepts component argument' do
+        unmounted_called = false
+        received_component = nil
+
+        component_class = RubyWasmUi.define_component(
+          render: -> { 'content' },
+          on_unmounted: ->(component) {
+            unmounted_called = true
+            received_component = component
+          }
+        )
+
+        instance = component_class.new
+        instance.on_unmounted
+
+        expect(unmounted_called).to be true
+        expect(received_component).to eq(instance)
+      end
+
+      it 'works with on_unmounted proc that accepts no arguments' do
+        unmounted_called = false
+        
+        component_class = RubyWasmUi.define_component(
+          render: -> { 'content' },
+          on_unmounted: -> { 
+            unmounted_called = true
+          }
+        )
+        
+        instance = component_class.new
+        instance.on_unmounted
+        
+        expect(unmounted_called).to be true
+      end
+
+      it 'allows calling component methods directly in on_unmounted without arguments' do
+        method_called_with_self = nil
+        
+        component_class = RubyWasmUi.define_component(
+          render: -> { 'content' },
+          on_unmounted: -> { 
+            method_called_with_self = self
+          }
+        )
+        
+        instance = component_class.new
+        instance.on_unmounted
+        
+        expect(method_called_with_self).to eq(instance)
+      end
+
+      it 'uses default empty proc when on_unmounted is not provided' do
+        component_class = RubyWasmUi.define_component(render: -> { 'content' })
+        instance = component_class.new
+
+        expect { instance.on_unmounted }.not_to raise_error
+      end
+    end
   end
 
   describe RubyWasmUi::Component do

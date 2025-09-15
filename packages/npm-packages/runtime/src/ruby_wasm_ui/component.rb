@@ -1,7 +1,7 @@
 module RubyWasmUi
 
   def self.empty_proc
-    -> (component) { }
+    -> { }
   end
 
   # Define a new component class
@@ -46,11 +46,21 @@ module RubyWasmUi
     attr_reader :state, :props
 
     def on_mounted
-      self.class.class_variable_get(:@@on_mounted).call(self)
+      on_mounted_proc = self.class.class_variable_get(:@@on_mounted)
+      if on_mounted_proc.arity == 0
+        instance_exec(&on_mounted_proc)
+      else
+        on_mounted_proc.call(self)
+      end
     end
 
     def on_unmounted
-      self.class.class_variable_get(:@@on_unmounted).call(self)
+      on_unmounted_proc = self.class.class_variable_get(:@@on_unmounted)
+      if on_unmounted_proc.arity == 0
+        instance_exec(&on_unmounted_proc)
+      else
+        on_unmounted_proc.call(self)
+      end
     end
 
     # Get VDOM elements

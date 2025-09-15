@@ -31,14 +31,14 @@ module RubyWasmUi
       # @param template [String]
       # @return [String]
       def parse(template)
-        # Preprocess self-closing custom element tags
-        processed_template = preprocess_self_closing_tags(template)
+        # Replace <template> with <div data-template> to work around DOMParser limitations
+        processed_template = preprocess_template_tag(template)
 
         # Convert PascalCase component names to kebab-case
         processed_template = preprocess_pascal_case_component_name(processed_template)
 
-        # Replace <template> with <div data-template> to work around DOMParser limitations
-        processed_template = preprocess_template_tag(processed_template)
+        # Preprocess self-closing custom element tags
+        processed_template = preprocess_self_closing_tags(processed_template)
 
         parser = JS.eval('return new DOMParser()')
         document = parser.call(:parseFromString, JS.try_convert(processed_template), 'text/html')
@@ -113,27 +113,20 @@ module RubyWasmUi
       end
 
       # Convert self-closing custom element tags to regular tags
-      # Custom elements are identified by having hyphens in their name or starting with uppercase (PascalCase components)
-      # Standard void elements and HTML elements are not converted
+      # Custom elements are identified by having hyphens in their name
+      # Standard void elements (img, input, etc.) are not converted
       # @param template [String]
       # @return [String]
       def preprocess_self_closing_tags(template)
-        # Pattern matches both:
-        # 1. kebab-case custom elements: <tag-name attributes />
-        # 2. PascalCase components: <ComponentName attributes />
+        # Pattern matches: <tag-name attributes />
+        # Where tag-name contains at least one hyphen (custom element convention)
         # Use a more robust pattern that handles nested brackets and quotes
-        template.gsub(/<((?:[a-z]+(?:-[a-z]+)+)|(?:[A-Z][a-zA-Z0-9]*))((?:[^>]|"[^"]*"|'[^']*')*?)\/>/i) do
+        template.gsub(/<([a-z]+(?:-[a-z]+)+)((?:[^>]|"[^"]*"|'[^']*')*?)\/>/i) do
           tag_name = ::Regexp.last_match(1)
           attributes = ::Regexp.last_match(2)
 
-          # Skip standard HTML elements
-          if STANDARD_HTML_ELEMENTS.include?(tag_name.downcase)
-            # Return original self-closing tag unchanged
-            "<#{tag_name}#{attributes}/>"
-          else
-            # Convert custom elements to regular open/close tags
-            "<#{tag_name}#{attributes}></#{tag_name}>"
-          end
+          # Convert to regular open/close tags
+          "<#{tag_name}#{attributes}></#{tag_name}>"
         end
       end
     end
