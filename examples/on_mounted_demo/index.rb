@@ -10,11 +10,11 @@ SimpleComponent = RubyWasmUi.define_component(
     update_state(message: "Mounted and state updated without component argument!")
   },
 
-  render: ->(component) {
+  render: ->() {
     RubyWasmUi::Template::Parser.parse_and_eval(<<~HTML, binding)
       <div>
         <h2>Simple Component (no args in on_mounted)</h2>
-        <p>{component.state[:message]}</p>
+        <p>{state[:message]}</p>
       </div>
     HTML
   }
@@ -25,16 +25,16 @@ AdvancedComponent = RubyWasmUi.define_component(
   state: -> { { message: "Not mounted yet" } },
 
   # on_mounted with component argument - existing behavior still works
-  on_mounted: ->(component) {
+  on_mounted: ->() {
     puts "AdvancedComponent mounted with component argument!"
-    component.update_state(message: "Mounted and state updated!")
+    update_state(message: "Mounted and state updated!")
   },
 
-  render: ->(component) {
+  render: ->() {
     RubyWasmUi::Template::Parser.parse_and_eval(<<~HTML, binding)
       <div>
         <h2>Advanced Component (with args in on_mounted)</h2>
-        <p>{component.state[:message]}</p>
+        <p>{state[:message]}</p>
       </div>
     HTML
   }

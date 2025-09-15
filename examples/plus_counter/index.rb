@@ -8,11 +8,11 @@ Counter = RubyWasmUi.define_component(
       update_state(count: state[:count] + 1)
     }
   },
-  render: -> (component) {
+  render: -> () {
     RubyWasmUi::Template::Parser.parse_and_eval(<<~HTML, binding)
       <div>
-        <p>Count: {component.state[:count]}</p>
-        <button on="{ click: -> { component.increment } }">Increment</button>
+        <p>Count: {state[:count]}</p>
+        <button on="{ click: -> { increment } }">Increment</button>
       </div>
     HTML
   }

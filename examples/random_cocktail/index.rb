@@ -8,20 +8,20 @@ random_cocktail = RubyWasmUi.define_component(
     }
   },
 
-  render: ->(component) {
-    is_loading = component.state[:is_loading] # Used in template
-    cocktail = component.state[:cocktail] # Used in template
+  render: ->() {
+    is_loading = state[:is_loading] # Used in template
+    cocktail = state[:cocktail] # Used in template
 
     template = <<~HTML
       <p r-if="{is_loading}">
         Loading...
       </p>
-      <button-component r-elsif="{cocktail.nil?}" on="{click_button: ->() { component.fetch_cocktail }}" label="Get a cocktail"/>
+      <button-component r-elsif="{cocktail.nil?}" on="{click_button: ->() { fetch_cocktail }}" label="Get a cocktail"/>
       <template r-else>
         <h1>{cocktail['strDrink']}</h1>
         <p>{cocktail['strInstructions']}</p>
         <img src="{cocktail['strDrinkThumb']}" alt="{cocktail['strDrink']}" style="width: 300px; height: 300px" />
-        <button-component on="{click_button: ->() { component.fetch_cocktail }}" label="Get another cocktail"/>
+        <button-component on="{click_button: ->() { fetch_cocktail }}" label="Get another cocktail"/>
       </template>
     HTML
 
@@ -54,10 +54,10 @@ ButtonComponent = RubyWasmUi.define_component(
     { label: props[:label] }
   },
 
-  render: ->(component) {
+  render: ->() {
     RubyWasmUi::Template::Parser.parse_and_eval(<<~HTML, binding)
-      <button on="{click: ->() { component.emit('click_button') }}" style="display: block; margin: 1em auto">
-        {component.state[:label]}
+      <button on="{click: ->() { emit('click_button') }}" style="display: block; margin: 1em auto">
+        {state[:label]}
       </button>
     HTML
   }

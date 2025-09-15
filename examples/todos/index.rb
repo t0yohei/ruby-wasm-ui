@@ -18,18 +18,18 @@ AppComponent = RubyWasmUi.define_component(
   },
 
   # Render the complete application
-  render: ->(component) {
+  render: ->() {
     RubyWasmUi::Template::Parser.parse_and_eval(<<~HTML, binding)
       <template>
         <h1>My TODOs</h1>
         <CreateTodoComponent
-          on="{ add: ->(text) { component.add_todo(text) } }"
+          on="{ add: ->(text) { add_todo(text) } }"
         />
         <TodoListComponent
-          todos="{component.state[:todos]}"
+          todos="{state[:todos]}"
           on="{
-            remove: ->(id) { component.remove_todo(id) },
-            edit: ->(payload) { component.edit_todo(payload) }
+            remove: ->(id) { remove_todo(id) },
+            edit: ->(payload) { edit_todo(payload) }
           }"
         />
       </template>
@@ -42,18 +42,16 @@ AppComponent = RubyWasmUi.define_component(
     # @param text [String] The TODO text
     add_todo: ->(text) {
       todo = { id: rand(10000), text: text }
-      state = self.state
-      self.update_state(todos: state[:todos] + [todo])
+      update_state(todos: state[:todos] + [todo])
       TodosRepository.write_todos(state[:todos] + [todo])
     },
 
     # Remove a TODO from the list
     # @param id [Integer] Id of TODO to remove
     remove_todo: ->(id) {
-      state = self.state
       new_todos = state[:todos].dup
       new_todos.delete_at(new_todos.index { |todo| todo[:id] == id })
-      self.update_state(todos: new_todos)
+      update_state(todos: new_todos)
       TodosRepository.write_todos(new_todos)
     },
 
@@ -62,10 +60,9 @@ AppComponent = RubyWasmUi.define_component(
     edit_todo: ->(payload) {
       edited = payload[:edited]
       id = payload[:id]
-      state = self.state
       new_todos = state[:todos].dup
       new_todos[new_todos.index { |todo| todo[:id] == id }] = new_todos[new_todos.index { |todo| todo[:id] == id }].merge(text: edited)
-      self.update_state(todos: new_todos)
+      update_state(todos: new_todos)
       TodosRepository.write_todos(new_todos)
     }
   }
@@ -79,24 +76,24 @@ CreateTodoComponent = RubyWasmUi.define_component(
   },
 
   # Render the new TODO input form
-  render: ->(component) {
+  render: ->() {
     RubyWasmUi::Template::Parser.parse_and_eval(<<~HTML, binding)
       <div>
         <label for="todo-input" type="text">New TODO</label>
         <input
           type="text"
           id="todo-input"
-          value="{component.state[:text]}"
+          value="{state[:text]}"
           on="{
-            input: ->(e) { component.update_state(text: e[:target][:value]) },
+            input: ->(e) { update_state(text: e[:target][:value]) },
             keydown: ->(e) {
-              if e[:key] == 'Enter' && component.state[:text].to_s.length >= 3
-                component.add_todo
+              if e[:key] == 'Enter' && state[:text].to_s.length >= 3
+                add_todo
               end
             }
           }"
         />
-        <button disabled="{component.state[:text].to_s.length < 3}" on="{ click: ->() { component.add_todo } }">
+        <button disabled="{state[:text].to_s.length < 3}" on="{ click: ->() { add_todo } }">
           Add
         </button>
       </div>
@@ -107,8 +104,8 @@ CreateTodoComponent = RubyWasmUi.define_component(
   methods: {
     # Add a new TODO and emit event to parent
     add_todo: ->() {
-      self.emit("add", self.state[:text])
-      self.update_state(text: "")
+      emit("add", state[:text])
+      update_state(text: "")
     }
   }
 )
@@ -116,8 +113,8 @@ CreateTodoComponent = RubyWasmUi.define_component(
 # TodoList component - manages the list of TODO items
 TodoListComponent = RubyWasmUi.define_component(
   # Render the TODO list
-  render: ->(component) {
-    todos = component.props[:todos]
+  render: ->() {
+    todos = props[:todos]
 
     item_components = todos.map do |todo|
       RubyWasmUi::Vdom.h(TodoItemComponent, {
@@ -125,8 +122,8 @@ TodoListComponent = RubyWasmUi.define_component(
         todo: todo[:text],
         id: todo[:id],
         on: {
-          remove: ->(id) { component.emit("remove", id) },
-          edit: ->(payload) { component.emit("edit", payload) }
+          remove: ->(id) { emit("remove", id) },
+          edit: ->(payload) { emit("edit", payload) }
         }
       })
     end
@@ -147,25 +144,25 @@ TodoItemComponent = RubyWasmUi.define_component(
   },
 
   # Render TODO item using r-if and r-else for conditional rendering
-  render: ->(component) {
+  render: ->() {
     RubyWasmUi::Template::Parser.parse_and_eval(<<~HTML, binding)
       <template>
         <TodoItemEditComponent
-          r-if="{component.state[:is_editing]}"
-          edited="{component.state[:edited]}"
+          r-if="{state[:is_editing]}"
+          edited="{state[:edited]}"
           on="{
-            input: ->(value) { component.input_value(value) },
-            save: ->() { component.save_edition },
-            cancel: ->() { component.cancel_edition }
+            input: ->(value) { input_value(value) },
+            save: ->() { save_edition },
+            cancel: ->() { cancel_edition }
           }"
         />
         <TodoItemViewComponent
           r-else
-          original="{component.state[:original]}"
-          id="{component.props[:id]}"
+          original="{state[:original]}"
+          id="{props[:id]}"
           on="{
-            editing: ->() { component.editing },
-            remove: ->(id) { component.emit('remove', id) }
+            editing: ->() { editing },
+            remove: ->(id) { emit('remove', id) }
           }"
         />
       </template>
@@ -175,22 +172,22 @@ TodoItemComponent = RubyWasmUi.define_component(
   # Component methods
   methods: {
     input_value: ->(value) {
-      self.update_state(edited: value)
+      update_state(edited: value)
     },
 
     editing: ->() {
-      self.update_state(is_editing: true)
+      update_state(is_editing: true)
     },
 
     # Save the edited TODO
     save_edition: ->() {
-      self.update_state(is_editing: false, original: self.state[:edited])
-      self.emit("edit", { edited: self.state[:edited], id: self.props[:id] })
+      update_state(is_editing: false, original: state[:edited])
+      emit("edit", { edited: state[:edited], id: props[:id] })
     },
 
     # Cancel editing and revert changes
     cancel_edition: ->() {
-      self.update_state(edited: self.state[:original], is_editing: false)
+      update_state(edited: state[:original], is_editing: false)
     }
   }
 )
@@ -198,18 +195,18 @@ TodoItemComponent = RubyWasmUi.define_component(
 # TodoItemEdit component - handles TODO editing mode
 TodoItemEditComponent = RubyWasmUi.define_component(
   # Render TODO item in edit mode
-  render: ->(component) {
+  render: ->() {
     RubyWasmUi::Template::Parser.parse_and_eval(<<~HTML, binding)
       <li>
         <input
-          value="{component.props[:edited]}"
+          value="{props[:edited]}"
           type="text"
-          on="{ input: ->(e) { component.emit('input', e[:target][:value]) } }"
+          on="{ input: ->(e) { emit('input', e[:target][:value]) } }"
         />
-        <button on="{ click: ->() { component.emit('save') } }">
+        <button on="{ click: ->() { emit('save') } }">
           Save
         </button>
-        <button on="{ click: ->() { component.emit('cancel') } }">
+        <button on="{ click: ->() { emit('cancel') } }">
           Cancel
         </button>
       </li>
@@ -220,13 +217,13 @@ TodoItemEditComponent = RubyWasmUi.define_component(
 # TodoItemView component - handles TODO display mode
 TodoItemViewComponent = RubyWasmUi.define_component(
   # Render TODO item in view mode
-  render: ->(component) {
+  render: ->() {
     RubyWasmUi::Template::Parser.parse_and_eval(<<~HTML, binding)
       <li>
-        <span on="{ dblclick: ->() { component.emit('editing') } }">
-          {component.props[:original]}
+        <span on="{ dblclick: ->() { emit('editing') } }">
+          {props[:original]}
         </span>
-        <button on="{ click: ->() { component.emit('remove', component.props[:id]) } }">
+        <button on="{ click: ->() { emit('remove', props[:id]) } }">
           Done
         </button>
       </li>

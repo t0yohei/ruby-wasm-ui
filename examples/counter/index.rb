@@ -8,18 +8,18 @@ CounterComponent = RubyWasmUi.define_component(
   },
 
   # Render the counter component
-  render: ->(component) {
+  render: ->() {
     RubyWasmUi::Template::Parser.parse_and_eval(<<~HTML, binding)
       <div>
-        <div>{component.state[:count]}</div>
+        <div>{state[:count]}</div>
         <!-- Both ButtonComponent and button-component are valid -->
         <ButtonComponent
           label="Increment"
-          on="{ click_button: -> { component.increment } }">
+          on="{ click_button: -> { increment } }">
         </ButtonComponent>
         <button-component
           label="Decrement"
-          on="{ click_button: -> { component.decrement } }"
+          on="{ click_button: -> { decrement } }"
         />
       </div>
     HTML
@@ -29,24 +29,22 @@ CounterComponent = RubyWasmUi.define_component(
   methods: {
     # Increment the counter
     increment: ->() {
-      state = self.state
-      self.update_state(count: state[:count] + 1)
+      update_state(count: state[:count] + 1)
     },
 
     # Decrement the counter
     decrement: ->() {
-      state = self.state
-      self.update_state(count: state[:count] - 1)
+      update_state(count: state[:count] - 1)
     }
   }
 )
 
 # Button component - reusable button with click handler
 ButtonComponent = RubyWasmUi.define_component(
-  render: ->(component) {
+  render: ->() {
     RubyWasmUi::Template::Parser.parse_and_eval(<<~HTML, binding)
-      <button on="{ click: ->() { component.emit('click_button') } }">
-        {component.props[:label]}
+      <button on="{ click: ->() { emit('click_button') } }">
+        {props[:label]}
       </button>
     HTML
   }
