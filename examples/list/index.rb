@@ -2,16 +2,17 @@ require "js"
 
 ListItem = RubyWasmUi.define_component(
   render: ->(component) {
-    todo = component.props[:todo]
-    RubyWasmUi::Vdom.h("li", {}, [todo])
+    RubyWasmUi::Template::Parser.parse_and_eval(<<~HTML, binding)
+      <li>{component.props[:todo]}</li>
+    HTML
   }
 )
 
 List = RubyWasmUi.define_component(
   render: ->(component) {
     todos = component.props[:todos]
-    list_items = todos.map { |todo| RubyWasmUi::Vdom.h(ListItem, { todo: todo }) }
-    RubyWasmUi::Vdom.h("ul", {}, list_items)
+    list_items = todos.map { |todo| ListItem.new(todo: todo) }
+    RubyWasmUi::Vdom.h("ul", {}, list_items.map { |item| item.render })
   }
 )
 
