@@ -121,8 +121,8 @@ RandomCocktailComponent = RubyWasmUi.define_component(
   },
 
   # Called after the component is mounted to the DOM
-  on_mounted: ->(component) {
-    component.fetch_cocktail
+  on_mounted: ->() {
+    fetch_cocktail
   },
 
   render: ->(component) {

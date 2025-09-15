@@ -1,14 +1,15 @@
 require "js"
 
-# Component with argument-less on_mounted
+# Component with argument-less on_mounted that can call component methods directly
 SimpleComponent = RubyWasmUi.define_component(
   state: -> { { message: "Not mounted yet" } },
-  
-  # on_mounted without arguments - demonstrates the new optional parameter feature
-  on_mounted: -> { 
+
+  # on_mounted without arguments - can call update_state directly!
+  on_mounted: -> {
     puts "SimpleComponent mounted without arguments!"
+    update_state(message: "Mounted and state updated without component argument!")
   },
-  
+
   render: ->(component) {
     RubyWasmUi::Template::Parser.parse_and_eval(<<~HTML, binding)
       <div>
@@ -22,13 +23,13 @@ SimpleComponent = RubyWasmUi.define_component(
 # Component with on_mounted that takes component argument (existing behavior)
 AdvancedComponent = RubyWasmUi.define_component(
   state: -> { { message: "Not mounted yet" } },
-  
+
   # on_mounted with component argument - existing behavior still works
-  on_mounted: ->(component) { 
+  on_mounted: ->(component) {
     puts "AdvancedComponent mounted with component argument!"
     component.update_state(message: "Mounted and state updated!")
   },
-  
+
   render: ->(component) {
     RubyWasmUi::Template::Parser.parse_and_eval(<<~HTML, binding)
       <div>
