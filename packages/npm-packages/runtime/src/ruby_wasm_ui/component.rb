@@ -120,7 +120,11 @@ module RubyWasmUi
 
     # @return [RubyWasmUi::Vdom]
     def render
-      @render.arity == 0 ? @render.call : @render.call(self)
+      if @render.arity == 0
+        instance_exec(&@render)
+      else
+        @render.call(self)
+      end
     end
 
     # Mount component

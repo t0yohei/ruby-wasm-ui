@@ -11,8 +11,7 @@ RIfAttributeDemo = RubyWasmUi.define_component(
   },
 
   # Render the component with r-if attribute examples
-  render: ->(component) {
-    state = component.state
+  render: ->() {
     RubyWasmUi::Template::Parser.parse_and_eval(<<~HTML, binding)
       <div>
         <h1>r-if Attribute Demo</h1>
@@ -23,7 +22,7 @@ RIfAttributeDemo = RubyWasmUi.define_component(
           <h2>Toggle Message</h2>
           <button
             style="background: #007bff; color: white; padding: 8px 16px; border: none; cursor: pointer;"
-            on="{click: ->() { component.toggle_message }}"
+            on="{click: ->() { toggle_message }}"
           >
             {state[:show_message] ? "Hide" : "Show"} Message
           </button>
@@ -41,19 +40,19 @@ RIfAttributeDemo = RubyWasmUi.define_component(
           <h2>Counter Conditions</h2>
           <button
             style="background: #28a745; color: white; padding: 8px 16px; border: none; cursor: pointer; margin-right: 5px;"
-            on="{click: ->() { component.increment_counter }}"
+            on="{click: ->() { increment_counter }}"
           >
             +1
           </button>
           <button
             style="background: #dc3545; color: white; padding: 8px 16px; border: none; cursor: pointer; margin-right: 5px;"
-            on="{click: ->() { component.decrement_counter }}"
+            on="{click: ->() { decrement_counter }}"
           >
             -1
           </button>
           <button
             style="background: #6c757d; color: white; padding: 8px 16px; border: none; cursor: pointer;"
-            on="{click: ->() { component.reset_counter }}"
+            on="{click: ->() { reset_counter }}"
           >
             Reset
           </button>
@@ -89,22 +88,22 @@ RIfAttributeDemo = RubyWasmUi.define_component(
   methods: {
     # Toggle the message visibility
     toggle_message: ->() {
-      self.update_state(show_message: !self.state[:show_message])
+      update_state(show_message: !state[:show_message])
     },
 
     # Increment the counter
     increment_counter: ->() {
-      self.update_state(counter: self.state[:counter] + 1)
+      update_state(counter: state[:counter] + 1)
     },
 
     # Decrement the counter
     decrement_counter: ->() {
-      self.update_state(counter: self.state[:counter] - 1)
+      update_state(counter: state[:counter] - 1)
     },
 
     # Reset the counter to zero
     reset_counter: ->() {
-      self.update_state(counter: 0)
+      update_state(counter: 0)
     }
   }
 )

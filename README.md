@@ -43,18 +43,18 @@ CounterComponent = RubyWasmUi.define_component(
   },
 
   # Render the counter component
-  render: ->(component) {
+  render: ->() {
     RubyWasmUi::Template::Parser.parse_and_eval(<<~HTML, binding)
       <div>
-        <div>{component.state[:count]}</div>
+        <div>{state[:count]}</div>
         <!-- Both ButtonComponent and button-component are valid -->
         <ButtonComponent
           label="Increment"
-          on="{ click_button: -> { component.increment } }">
+          on="{ click_button: -> { increment } }">
         </ButtonComponent>
         <button-component
           label="Decrement"
-          on="{ click_button: -> { component.decrement } }"
+          on="{ click_button: -> { decrement } }"
         />
       </div>
     HTML
@@ -63,22 +63,20 @@ CounterComponent = RubyWasmUi.define_component(
   # Component methods
   methods: {
     increment: ->() {
-      state = self.state
-      self.update_state(count: state[:count] + 1)
+      update_state(count: state[:count] + 1)
     },
     decrement: ->() {
-      state = self.state
-      self.update_state(count: state[:count] - 1)
+      update_state(count: state[:count] - 1)
     }
   }
 )
 
 # Button component - reusable button with click handler
 ButtonComponent = RubyWasmUi.define_component(
-  render: ->(component) {
+  render: ->() {
     RubyWasmUi::Template::Parser.parse_and_eval(<<~HTML, binding)
-      <button on="{ click: ->() { component.emit('click_button') } }">
-        {component.props[:label]}
+      <button on="{ click: ->() { emit('click_button') } }">
+        {props[:label]}
       </button>
     HTML
   }
@@ -125,21 +123,21 @@ RandomCocktailComponent = RubyWasmUi.define_component(
     fetch_cocktail
   },
 
-  render: ->(component) {
-    is_loading = component.state[:is_loading] # Used in template
-    cocktail = component.state[:cocktail] # Used in template
+  render: ->() {
+    is_loading = state[:is_loading] # Used in template
+    cocktail = state[:cocktail] # Used in template
 
     template = <<~HTML
       <div>
         <p r-if="{is_loading}">Loading...</p>
-        <button r-elsif="{cocktail.nil?}" on="{click: ->() { component.fetch_cocktail }}">
+        <button r-elsif="{cocktail.nil?}" on="{click: ->() { fetch_cocktail }}">
           Get a cocktail
         </button>
         <template r-else>
           <h2>{cocktail['strDrink']}</h2>
           <p>{cocktail['strInstructions']}</p>
           <img src="{cocktail['strDrinkThumb']}" alt="{cocktail['strDrink']}" style="width: 300px; height: 300px" />
-          <button on="{click: ->() { component.fetch_cocktail }}">
+          <button on="{click: ->() { fetch_cocktail }}">
             Get another cocktail
           </button>
         </template>
