@@ -19,23 +19,21 @@ AppComponent = RubyWasmUi.define_component(
 
   # Render the complete application
   render: ->(component) {
-    state = component.state
-
-    RubyWasmUi::Vdom.h_fragment([
-      RubyWasmUi::Vdom.h("h1", {}, ["My TODOs"]),
-      RubyWasmUi::Vdom.h(CreateTodoComponent, {
-        on: {
-          add: ->(text) { component.add_todo(text) }
-        }
-      }),
-      RubyWasmUi::Vdom.h(TodoListComponent, {
-        todos: state[:todos],
-        on: {
-          remove: ->(id) { component.remove_todo(id) },
-          edit: ->(payload) { component.edit_todo(payload) }
-        }
-      })
-    ])
+    RubyWasmUi::Template::Parser.parse_and_eval(<<~HTML, binding)
+      <template>
+        <h1>My TODOs</h1>
+        <CreateTodoComponent
+          on="{ add: ->(text) { component.add_todo(text) } }"
+        ></CreateTodoComponent>
+        <TodoListComponent
+          todos="{component.state[:todos]}"
+          on="{
+            remove: ->(id) { component.remove_todo(id) },
+            edit: ->(payload) { component.edit_todo(payload) }
+          }"
+        ></TodoListComponent>
+      </template>
+    HTML
   },
 
   # Component methods
@@ -82,28 +80,27 @@ CreateTodoComponent = RubyWasmUi.define_component(
 
   # Render the new TODO input form
   render: ->(component) {
-    state = component.state
-
-    RubyWasmUi::Vdom.h("div", {}, [
-      RubyWasmUi::Vdom.h("label", { for: "todo-input", type: "text" }, ["New TODO"]),
-      RubyWasmUi::Vdom.h("input", {
-        type: "text",
-        id: "todo-input",
-        value: state[:text],
-        on: {
-          input: ->(e) { component.update_state(text: e[:target][:value]) },
-          keydown: ->(e) {
-            if e[:key] == "Enter" && state[:text].to_s.length >= 3
-              component.add_todo
-            end
-          }
-        }
-      }),
-      RubyWasmUi::Vdom.h("button", {
-        disabled: state[:text].to_s.length < 3,
-        on: { click: ->(_e) { component.add_todo } }
-      }, ["Add"])
-    ])
+    RubyWasmUi::Template::Parser.parse_and_eval(<<~HTML, binding)
+      <div>
+        <label for="todo-input" type="text">New TODO</label>
+        <input
+          type="text"
+          id="todo-input"
+          value="{component.state[:text]}"
+          on="{
+            input: ->(e) { component.update_state(text: e[:target][:value]) },
+            keydown: ->(e) {
+              if e[:key] == 'Enter' && component.state[:text].to_s.length >= 3
+                component.add_todo
+              end
+            }
+          }"
+        />
+        <button disabled="{component.state[:text].to_s.length < 3}" on="{ click: ->() { component.add_todo } }">
+          Add
+        </button>
+      </div>
+    HTML
   },
 
   # Component methods
@@ -122,9 +119,9 @@ TodoListComponent = RubyWasmUi.define_component(
   render: ->(component) {
     todos = component.props[:todos]
 
-    item_components = todos.map.with_index do |todo, i|
+    item_components = todos.map do |todo|
       RubyWasmUi::Vdom.h(TodoItemComponent, {
-        key: todo[:id],
+        key: todo[:text],
         todo: todo[:text],
         id: todo[:id],
         on: {
@@ -136,9 +133,6 @@ TodoListComponent = RubyWasmUi.define_component(
 
     RubyWasmUi::Vdom.h("ul", {}, item_components)
   },
-
-  # Add empty methods hash to ensure proper component initialization
-  methods: {}
 )
 
 # TodoItem component - handles individual TODO items
@@ -152,34 +146,42 @@ TodoItemComponent = RubyWasmUi.define_component(
     }
   },
 
-  # Render TODO item using appropriate sub-component
+  # Render TODO item using r-if and r-else for conditional rendering
   render: ->(component) {
-    state = component.state
-    id = component.props[:id]
-
-    if state[:is_editing]
-      RubyWasmUi::Vdom.h(TodoItemEditComponent, {
-        edited: state[:edited],
-        on: {
-          input: ->(value) { component.update_state(edited: value) },
-          save: ->(_payload) { component.save_edition },
-          cancel: ->(_payload) { component.cancel_edition }
-        }
-      })
-    else
-      RubyWasmUi::Vdom.h(TodoItemViewComponent, {
-        original: state[:original],
-        id: id,
-        on: {
-          edit: ->(_payload) { component.update_state(is_editing: true) },
-          remove: ->(id) { component.emit("remove", id) }
-        }
-      })
-    end
+    RubyWasmUi::Template::Parser.parse_and_eval(<<~HTML, binding)
+      <template>
+        <TodoItemEditComponent
+          r-if="{component.state[:is_editing]}"
+          edited="{component.state[:edited]}"
+          on="{
+            input: ->(value) { component.input_value(value) },
+            save: ->() { component.save_edition },
+            cancel: ->() { component.cancel_edition }
+          }"
+        ></TodoItemEditComponent>
+        <TodoItemViewComponent
+          r-else
+          original="{component.state[:original]}"
+          id="{component.props[:id]}"
+          on="{
+            editing: ->() { component.editing },
+            remove: ->(id) { component.emit('remove', id) }
+          }"
+        ></TodoItemViewComponent>
+      </template>
+    HTML
   },
 
   # Component methods
   methods: {
+    input_value: ->(value) {
+      self.update_state(edited: value)
+    },
+
+    editing: ->() {
+      self.update_state(is_editing: true)
+    },
+
     # Save the edited TODO
     save_edition: ->() {
       self.update_state(is_editing: false, original: self.state[:edited])
@@ -197,66 +199,39 @@ TodoItemComponent = RubyWasmUi.define_component(
 TodoItemEditComponent = RubyWasmUi.define_component(
   # Render TODO item in edit mode
   render: ->(component) {
-    edited = component.props[:edited]
-
-    RubyWasmUi::Vdom.h("li", {}, [
-      RubyWasmUi::Vdom.h("input", {
-        value: edited,
-        type: "text",
-        on: {
-          input: ->(e) {
-            component.emit("input", e[:target][:value])
-          }
-        }
-      }),
-      RubyWasmUi::Vdom.h("button", {
-        on: {
-          click: ->(_e) {
-            component.emit("save", nil)
-          }
-        }
-      }, ["Save"]),
-      RubyWasmUi::Vdom.h("button", {
-        on: {
-          click: ->(_e) {
-            component.emit("cancel", nil)
-          }
-        }
-      }, ["Cancel"])
-    ])
+    RubyWasmUi::Template::Parser.parse_and_eval(<<~HTML, binding)
+      <li>
+        <input
+          value="{component.props[:edited]}"
+          type="text"
+          on="{ input: ->(e) { component.emit('input', e[:target][:value]) } }"
+        />
+        <button on="{ click: ->() { component.emit('save') } }">
+          Save
+        </button>
+        <button on="{ click: ->() { component.emit('cancel') } }">
+          Cancel
+        </button>
+      </li>
+    HTML
   },
-
-  # Add empty methods hash to ensure proper component initialization
-  methods: {}
 )
 
 # TodoItemView component - handles TODO display mode
 TodoItemViewComponent = RubyWasmUi.define_component(
   # Render TODO item in view mode
   render: ->(component) {
-    original = component.props[:original]
-    id = component.props[:id]
-
-    RubyWasmUi::Vdom.h("li", {}, [
-      RubyWasmUi::Vdom.h("span", {
-        on: {
-          dblclick: ->(_e) {
-            component.emit("edit", nil)
-          }
-        }
-      }, [original]),
-      RubyWasmUi::Vdom.h("button", {
-        on: {
-          click: ->(_e) {
-            component.emit("remove", id)
-          }
-        }
-      }, ["Done"])
-    ])
+    RubyWasmUi::Template::Parser.parse_and_eval(<<~HTML, binding)
+      <li>
+        <span on="{ dblclick: ->() { component.emit('editing') } }">
+          {component.props[:original]}
+        </span>
+        <button on="{ click: ->() { component.emit('remove', component.props[:id]) } }">
+          Done
+        </button>
+      </li>
+    HTML
   },
-
-  # Add empty methods hash to ensure proper component initialization
-  methods: {}
 )
 
 # Create and mount the application
