@@ -1,0 +1,58 @@
+require "js"
+
+# Component with argument-less on_mounted
+SimpleComponent = RubyWasmUi.define_component(
+  state: -> { { message: "Not mounted yet" } },
+  
+  # on_mounted without arguments - demonstrates the new optional parameter feature
+  on_mounted: -> { 
+    puts "SimpleComponent mounted without arguments!"
+  },
+  
+  render: ->(component) {
+    RubyWasmUi::Template::Parser.parse_and_eval(<<~HTML, binding)
+      <div>
+        <h2>Simple Component (no args in on_mounted)</h2>
+        <p>{component.state[:message]}</p>
+      </div>
+    HTML
+  }
+)
+
+# Component with on_mounted that takes component argument (existing behavior)
+AdvancedComponent = RubyWasmUi.define_component(
+  state: -> { { message: "Not mounted yet" } },
+  
+  # on_mounted with component argument - existing behavior still works
+  on_mounted: ->(component) { 
+    puts "AdvancedComponent mounted with component argument!"
+    component.update_state(message: "Mounted and state updated!")
+  },
+  
+  render: ->(component) {
+    RubyWasmUi::Template::Parser.parse_and_eval(<<~HTML, binding)
+      <div>
+        <h2>Advanced Component (with args in on_mounted)</h2>
+        <p>{component.state[:message]}</p>
+      </div>
+    HTML
+  }
+)
+
+# Main App component
+AppComponent = RubyWasmUi.define_component(
+  render: -> {
+    RubyWasmUi::Template::Parser.parse_and_eval(<<~HTML, binding)
+      <div>
+        <h1>on_mounted Demo</h1>
+        <SimpleComponent />
+        <AdvancedComponent />
+      </div>
+    HTML
+  }
+)
+
+# Mount the app
+app = RubyWasmUi::App.create(AppComponent)
+app_element = JS.global[:document].getElementById("app")
+app.mount(app_element)
