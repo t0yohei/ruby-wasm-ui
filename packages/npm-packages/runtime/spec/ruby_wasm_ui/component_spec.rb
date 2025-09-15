@@ -153,18 +153,34 @@ RSpec.describe RubyWasmUi do
 
       it 'works with on_mounted proc that accepts no arguments' do
         mounted_called = false
-
+        
         component_class = RubyWasmUi.define_component(
           render: -> { 'content' },
-          on_mounted: -> {
+          on_mounted: -> { 
             mounted_called = true
           }
         )
-
+        
         instance = component_class.new
         instance.on_mounted
-
+        
         expect(mounted_called).to be true
+      end
+
+      it 'allows calling component methods directly in on_mounted without arguments' do
+        method_called_with_self = nil
+        
+        component_class = RubyWasmUi.define_component(
+          render: -> { 'content' },
+          on_mounted: -> { 
+            method_called_with_self = self
+          }
+        )
+        
+        instance = component_class.new
+        instance.on_mounted
+        
+        expect(method_called_with_self).to eq(instance)
       end
 
       it 'uses default empty proc when on_mounted is not provided' do
@@ -197,18 +213,34 @@ RSpec.describe RubyWasmUi do
 
       it 'works with on_unmounted proc that accepts no arguments' do
         unmounted_called = false
-
+        
         component_class = RubyWasmUi.define_component(
           render: -> { 'content' },
-          on_unmounted: -> {
+          on_unmounted: -> { 
             unmounted_called = true
           }
         )
-
+        
         instance = component_class.new
         instance.on_unmounted
-
+        
         expect(unmounted_called).to be true
+      end
+
+      it 'allows calling component methods directly in on_unmounted without arguments' do
+        method_called_with_self = nil
+        
+        component_class = RubyWasmUi.define_component(
+          render: -> { 'content' },
+          on_unmounted: -> { 
+            method_called_with_self = self
+          }
+        )
+        
+        instance = component_class.new
+        instance.on_unmounted
+        
+        expect(method_called_with_self).to eq(instance)
       end
 
       it 'uses default empty proc when on_unmounted is not provided' do
