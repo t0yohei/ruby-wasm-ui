@@ -24,14 +24,14 @@ AppComponent = RubyWasmUi.define_component(
         <h1>My TODOs</h1>
         <CreateTodoComponent
           on="{ add: ->(text) { component.add_todo(text) } }"
-        ></CreateTodoComponent>
+        />
         <TodoListComponent
           todos="{component.state[:todos]}"
           on="{
             remove: ->(id) { component.remove_todo(id) },
             edit: ->(payload) { component.edit_todo(payload) }
           }"
-        ></TodoListComponent>
+        />
       </template>
     HTML
   },
@@ -158,7 +158,7 @@ TodoItemComponent = RubyWasmUi.define_component(
             save: ->() { component.save_edition },
             cancel: ->() { component.cancel_edition }
           }"
-        ></TodoItemEditComponent>
+        />
         <TodoItemViewComponent
           r-else
           original="{component.state[:original]}"
@@ -167,7 +167,7 @@ TodoItemComponent = RubyWasmUi.define_component(
             editing: ->() { component.editing },
             remove: ->(id) { component.emit('remove', id) }
           }"
-        ></TodoItemViewComponent>
+        />
       </template>
     HTML
   },
