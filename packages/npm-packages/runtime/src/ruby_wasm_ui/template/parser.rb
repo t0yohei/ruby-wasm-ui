@@ -3,6 +3,15 @@
 module RubyWasmUi
   module Template
     module Parser
+      # Standard HTML elements that should not be treated as custom components
+      STANDARD_HTML_ELEMENTS = %w[
+        a abbr address area article aside audio b base bdi bdo blockquote body br button canvas caption cite code col colgroup
+        data datalist dd del details dfn dialog div dl dt em embed fieldset figcaption figure footer form h1 h2 h3 h4 h5 h6
+        head header hr html i iframe img input ins kbd label legend li link main map mark meta meter nav noscript object ol
+        optgroup option output p param picture pre progress q rp rt ruby s samp script section select small source span
+        strong style sub summary sup table tbody td template textarea tfoot th thead time title tr track u ul var video wbr
+      ].freeze
+
       module_function
 
       # @param template [String]
@@ -104,20 +113,27 @@ module RubyWasmUi
       end
 
       # Convert self-closing custom element tags to regular tags
-      # Custom elements are identified by having hyphens in their name
-      # Standard void elements (img, input, etc.) are not converted
+      # Custom elements are identified by having hyphens in their name or starting with uppercase (PascalCase components)
+      # Standard void elements and HTML elements are not converted
       # @param template [String]
       # @return [String]
       def preprocess_self_closing_tags(template)
-        # Pattern matches: <tag-name attributes />
-        # Where tag-name contains at least one hyphen (custom element convention)
+        # Pattern matches both:
+        # 1. kebab-case custom elements: <tag-name attributes />
+        # 2. PascalCase components: <ComponentName attributes />
         # Use a more robust pattern that handles nested brackets and quotes
-        template.gsub(/<([a-z]+(?:-[a-z]+)+)((?:[^>]|"[^"]*"|'[^']*')*?)\/>/i) do
+        template.gsub(/<((?:[a-z]+(?:-[a-z]+)+)|(?:[A-Z][a-zA-Z0-9]*))((?:[^>]|"[^"]*"|'[^']*')*?)\/>/i) do
           tag_name = ::Regexp.last_match(1)
           attributes = ::Regexp.last_match(2)
 
-          # Convert to regular open/close tags
-          "<#{tag_name}#{attributes}></#{tag_name}>"
+          # Skip standard HTML elements
+          if STANDARD_HTML_ELEMENTS.include?(tag_name.downcase)
+            # Return original self-closing tag unchanged
+            "<#{tag_name}#{attributes}/>"
+          else
+            # Convert custom elements to regular open/close tags
+            "<#{tag_name}#{attributes}></#{tag_name}>"
+          end
         end
       end
     end
