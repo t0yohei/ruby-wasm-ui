@@ -5,7 +5,10 @@
   "description": "A project to ruby.wasm ui framework",
   "scripts": {
     "serve:examples": "npx http-server . -o './examples/?env=PRD' --cors -P 'http://localhost:8080?' -c-1",
-    "serve:examples:dev": "cd packages/npm-packages/runtime && npm run build:dev && cd ../../.. && npx http-server . -o './examples/?env=DEV' --cors -P 'http://localhost:8080?' -c-1"
+    "serve:examples:dev": "cd packages/npm-packages/runtime && npm run build:dev && cd ../../.. && npx http-server . './examples/?env=DEV' --cors -P 'http://localhost:8080?' -c-1",
+    "test:ui": "npx playwright test",
+    "test:ui:ui": "npx playwright test --ui",
+    "test:ui:report": "npx playwright show-report"
   },
   "repository": {
     "type": "git",
@@ -21,5 +24,8 @@
   "type": "module",
   "workspaces": [
     "packages/*"
-  ]
+  ],
+  "devDependencies": {
+    "@playwright/test": "^1.40.0"
+  }
 }

@@ -35,3 +35,7 @@ lerna-debug.log*
 
 # Claude
 CLAUDE.md
+
+# UI Tests
+playwright-report/
+test-results/
