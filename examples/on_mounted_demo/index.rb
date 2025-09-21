@@ -10,7 +10,7 @@ SimpleComponent = RubyWasmUi.define_component(
     update_state(message: "Mounted and state updated without component argument!")
   },
 
-  render: ->() {
+  template: ->() {
     RubyWasmUi::Template::Parser.parse_and_eval(<<~HTML, binding)
       <div>
         <h2>Simple Component (no args in on_mounted)</h2>
@@ -30,7 +30,7 @@ AdvancedComponent = RubyWasmUi.define_component(
     update_state(message: "Mounted and state updated!")
   },
 
-  render: ->() {
+  template: ->() {
     RubyWasmUi::Template::Parser.parse_and_eval(<<~HTML, binding)
       <div>
         <h2>Advanced Component (with args in on_mounted)</h2>
@@ -42,7 +42,7 @@ AdvancedComponent = RubyWasmUi.define_component(
 
 # Main App component
 AppComponent = RubyWasmUi.define_component(
-  render: -> {
+  template: -> {
     RubyWasmUi::Template::Parser.parse_and_eval(<<~HTML, binding)
       <div>
         <h1>on_mounted Demo</h1>

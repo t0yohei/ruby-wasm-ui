@@ -2,7 +2,7 @@ require "js"
 
 # search-field component definition
 SearchField = RubyWasmUi.define_component(
-  render: ->() {
+  template: ->() {
     RubyWasmUi::Template::Parser.parse_and_eval(<<~HTML, binding)
       <input
         type="text"
@@ -19,7 +19,7 @@ SearchDemo = RubyWasmUi.define_component(
   state: ->() {
     { search_term: '' }
   },
-  render: ->() {
+  template: ->() {
     RubyWasmUi::Template::Parser.parse_and_eval(<<~HTML, binding)
       <template>
         <h2>Search Demo</h2>

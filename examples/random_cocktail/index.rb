@@ -8,7 +8,7 @@ random_cocktail = RubyWasmUi.define_component(
     }
   },
 
-  render: ->() {
+  template: ->() {
     is_loading = state[:is_loading] # Used in template
     cocktail = state[:cocktail] # Used in template
 
@@ -54,7 +54,7 @@ ButtonComponent = RubyWasmUi.define_component(
     { label: props[:label] }
   },
 
-  render: ->() {
+  template: ->() {
     RubyWasmUi::Template::Parser.parse_and_eval(<<~HTML, binding)
       <button on="{click: ->() { emit('click_button') }}" style="display: block; margin: 1em auto">
         {state[:label]}

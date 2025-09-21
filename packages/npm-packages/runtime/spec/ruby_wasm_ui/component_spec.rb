@@ -4,78 +4,78 @@ require 'spec_helper'
 
 RSpec.describe RubyWasmUi do
   describe '.define_component' do
-    let(:render) { ->(component) { 'rendered content' } }
+    let(:template) { ->(component) { 'rendered content' } }
     let(:state) { ->(props) { { count: 0 } } }
 
-    context 'with render proc' do
-      it 'works with render proc that accepts component argument' do
+    context 'with template proc' do
+      it 'works with template proc that accepts component argument' do
         component_class = RubyWasmUi.define_component(
-          render: ->(component) { 'rendered with component' }
+          template: ->(component) { 'rendered with component' }
         )
         instance = component_class.new
-        expect(instance.render).to eq('rendered with component')
+        expect(instance.template).to eq('rendered with component')
       end
 
-      it 'works with render proc that accepts no arguments' do
+      it 'works with template proc that accepts no arguments' do
         component_class = RubyWasmUi.define_component(
-          render: -> { 'rendered without args' }
+          template: -> { 'rendered without args' }
         )
         instance = component_class.new
-        expect(instance.render).to eq('rendered without args')
+        expect(instance.template).to eq('rendered without args')
       end
 
-      it 'can access component state and props in render proc without arguments' do
+      it 'can access component state and props in template proc without arguments' do
         component_class = RubyWasmUi.define_component(
-          render: -> { "count: #{@state[:count]}, name: #{@props[:name]}" },
+          template: -> { "count: #{@state[:count]}, name: #{@props[:name]}" },
           state: -> { { count: 5 } }
         )
         instance = component_class.new(name: 'test')
-        expect(instance.render).to eq('count: 5, name: test')
+        expect(instance.template).to eq('count: 5, name: test')
       end
 
-      it 'can access component methods in render proc without arguments' do
+      it 'can access component methods in template proc without arguments' do
         component_class = RubyWasmUi.define_component(
-          render: -> { helper_method },
+          template: -> { helper_method },
           methods: {
             helper_method: -> { 'helper result' }
           }
         )
         instance = component_class.new
-        expect(instance.render).to eq('helper result')
+        expect(instance.template).to eq('helper result')
       end
 
-      it 'passes correct component instance when render proc has arguments' do
+      it 'passes correct component instance when template proc has arguments' do
         received_component = nil
         component_class = RubyWasmUi.define_component(
-          render: ->(component) {
+          template: ->(component) {
             received_component = component
             'rendered'
           }
         )
         instance = component_class.new
-        instance.render
+        instance.template
         expect(received_component).to eq(instance)
       end
 
-      it 'handles render proc with variable arity correctly' do
+      it 'handles template proc with variable arity correctly' do
         # Test with proc that can accept 0 or more arguments
         component_class = RubyWasmUi.define_component(
-          render: ->(*args) { "args count: #{args.length}" }
+          template: ->(*args) { "args count: #{args.length}" }
         )
         instance = component_class.new
         # Variable arity procs (arity < 0) should be called with component argument
-        expect(instance.render).to eq('args count: 1')
+        expect(instance.template).to eq('args count: 1')
       end
 
-      it 'works with Vdom.h in render proc without arguments' do
+      it 'works with Vdom.h in template proc without arguments' do
         component_class = RubyWasmUi.define_component(
-          render: -> {
+          template: -> {
             RubyWasmUi::Vdom.h('div', {}, ["Hello #{@props[:name]}"])
           },
           state: -> { { count: 0 } }
         )
         instance = component_class.new(name: 'World')
-        result = instance.render
+        result = instance.template
         expect(result).to be_a(RubyWasmUi::Vdom)
         expect(result.tag).to eq('div')
         expect(result.children.length).to eq(1)
@@ -84,15 +84,15 @@ RSpec.describe RubyWasmUi do
         expect(result.children.first.value).to eq('Hello World')
       end
 
-      it 'works with Vdom.h in render proc with component argument' do
+      it 'works with Vdom.h in template proc with component argument' do
         component_class = RubyWasmUi.define_component(
-          render: ->(component) {
+          template: ->(component) {
             RubyWasmUi::Vdom.h('div', {}, ["Count: #{component.state[:count]}"])
           },
           state: -> { { count: 42 } }
         )
         instance = component_class.new
-        result = instance.render
+        result = instance.template
         expect(result).to be_a(RubyWasmUi::Vdom)
         expect(result.tag).to eq('div')
         expect(result.children.length).to eq(1)
@@ -105,7 +105,7 @@ RSpec.describe RubyWasmUi do
     context 'with state proc' do
       it 'works with state proc that accepts props argument' do
         component_class = RubyWasmUi.define_component(
-          render: -> { 'content' },
+          template: -> { 'content' },
           state: ->(props) { { value: props[:initial] } }
         )
         instance = component_class.new(initial: 5)
@@ -114,7 +114,7 @@ RSpec.describe RubyWasmUi do
 
       it 'works with state proc that accepts no arguments' do
         component_class = RubyWasmUi.define_component(
-          render: -> { 'content' },
+          template: -> { 'content' },
           state: -> { { value: 10 } }
         )
         instance = component_class.new
@@ -130,7 +130,7 @@ RSpec.describe RubyWasmUi do
         }
 
         component_class = RubyWasmUi.define_component(
-          render:,
+          template:,
           state:,
           methods: custom_methods
         )
@@ -149,15 +149,15 @@ RSpec.describe RubyWasmUi do
 
       it 'raises error when method name conflicts with existing method' do
         custom_methods = {
-          render: -> { 'custom render' }  # conflicts with existing render method
+          template: -> { 'custom template' }  # conflicts with existing template method
         }
 
         expect {
           RubyWasmUi.define_component(
-            render:,
+            template:,
             methods: custom_methods
           )
-        }.to raise_error(/Method "render\(\)" already exists in the component\./)
+        }.to raise_error(/Method "template\(\)" already exists in the component\./)
       end
 
       it 'raises error when method name conflicts with private method' do
@@ -167,7 +167,7 @@ RSpec.describe RubyWasmUi do
 
         expect {
           RubyWasmUi.define_component(
-            render:,
+            template:,
             methods: custom_methods
           )
         }.to raise_error(/Method "patch\(\)" already exists in the component\./)
@@ -175,7 +175,7 @@ RSpec.describe RubyWasmUi do
 
       it 'works correctly with empty methods hash' do
         component_class = RubyWasmUi.define_component(
-          render:,
+          template:,
           methods: {}
         )
 
@@ -189,7 +189,7 @@ RSpec.describe RubyWasmUi do
         }
 
         component_class = RubyWasmUi.define_component(
-          render:,
+          template:,
           methods: custom_methods
         )
 
@@ -201,7 +201,7 @@ RSpec.describe RubyWasmUi do
 
     context 'without methods parameter' do
       it 'creates component successfully when methods is not provided' do
-        component_class = RubyWasmUi.define_component(render:)
+        component_class = RubyWasmUi.define_component(template:)
 
         instance = component_class.new
         expect(instance).to be_a(RubyWasmUi::Component)
@@ -214,7 +214,7 @@ RSpec.describe RubyWasmUi do
         received_component = nil
 
         component_class = RubyWasmUi.define_component(
-          render: -> { 'content' },
+          template: -> { 'content' },
           on_mounted: ->(component) {
             mounted_called = true
             received_component = component
@@ -232,7 +232,7 @@ RSpec.describe RubyWasmUi do
         mounted_called = false
         
         component_class = RubyWasmUi.define_component(
-          render: -> { 'content' },
+          template: -> { 'content' },
           on_mounted: -> { 
             mounted_called = true
           }
@@ -248,7 +248,7 @@ RSpec.describe RubyWasmUi do
         method_called_with_self = nil
         
         component_class = RubyWasmUi.define_component(
-          render: -> { 'content' },
+          template: -> { 'content' },
           on_mounted: -> { 
             method_called_with_self = self
           }
@@ -261,7 +261,7 @@ RSpec.describe RubyWasmUi do
       end
 
       it 'uses default empty proc when on_mounted is not provided' do
-        component_class = RubyWasmUi.define_component(render: -> { 'content' })
+        component_class = RubyWasmUi.define_component(template: -> { 'content' })
         instance = component_class.new
 
         expect { instance.on_mounted }.not_to raise_error
@@ -274,7 +274,7 @@ RSpec.describe RubyWasmUi do
         received_component = nil
 
         component_class = RubyWasmUi.define_component(
-          render: -> { 'content' },
+          template: -> { 'content' },
           on_unmounted: ->(component) {
             unmounted_called = true
             received_component = component
@@ -292,7 +292,7 @@ RSpec.describe RubyWasmUi do
         unmounted_called = false
         
         component_class = RubyWasmUi.define_component(
-          render: -> { 'content' },
+          template: -> { 'content' },
           on_unmounted: -> { 
             unmounted_called = true
           }
@@ -308,7 +308,7 @@ RSpec.describe RubyWasmUi do
         method_called_with_self = nil
         
         component_class = RubyWasmUi.define_component(
-          render: -> { 'content' },
+          template: -> { 'content' },
           on_unmounted: -> { 
             method_called_with_self = self
           }
@@ -321,7 +321,7 @@ RSpec.describe RubyWasmUi do
       end
 
       it 'uses default empty proc when on_unmounted is not provided' do
-        component_class = RubyWasmUi.define_component(render: -> { 'content' })
+        component_class = RubyWasmUi.define_component(template: -> { 'content' })
         instance = component_class.new
 
         expect { instance.on_unmounted }.not_to raise_error
@@ -331,8 +331,8 @@ RSpec.describe RubyWasmUi do
 
   describe RubyWasmUi::Component do
     describe '#emit' do
-      let(:render) { -> { 'content' } }
-      let(:component_class) { RubyWasmUi.define_component(render:) }
+      let(:template) { -> { 'content' } }
+      let(:component_class) { RubyWasmUi.define_component(template:) }
       let(:event_name) { 'test_event' }
 
       context 'when dispatcher is set' do
@@ -366,8 +366,8 @@ RSpec.describe RubyWasmUi do
     end
 
     describe '#wire_event_handler' do
-      let(:render) { -> { 'content' } }
-      let(:component_class) { RubyWasmUi.define_component(render:) }
+      let(:template) { -> { 'content' } }
+      let(:component_class) { RubyWasmUi.define_component(template:) }
       let(:event_name) { 'test_event' }
       let(:parent_component) { component_class.new }
 

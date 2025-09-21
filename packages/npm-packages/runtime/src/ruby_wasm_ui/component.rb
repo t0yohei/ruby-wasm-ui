@@ -5,14 +5,14 @@ module RubyWasmUi
   end
 
   # Define a new component class
-  # @param render [Proc] The render function
+  # @param template [Proc] The template function
   # @param state [Proc, nil] The state function
   # @param methods [Hash] Additional methods to add to the component
   # @return [Class] The new component class
-  def self.define_component(render:, state: nil, on_mounted: empty_proc, on_unmounted: empty_proc, methods: {})
+  def self.define_component(template:, state: nil, on_mounted: empty_proc, on_unmounted: empty_proc, methods: {})
     Class.new(Component) do
       self.class_variable_set(:@@state, state)
-      self.class_variable_set(:@@render, render)
+      self.class_variable_set(:@@template, template)
       self.class_variable_set(:@@on_mounted, on_mounted)
       self.class_variable_set(:@@on_unmounted, on_unmounted)
 
@@ -36,7 +36,7 @@ module RubyWasmUi
       @vdom = nil
       @host_el = nil
       @state = initialize_state
-      @render = self.class.class_variable_get(:@@render)
+      @template = self.class.class_variable_get(:@@template)
       @event_handlers = event_handlers
       @parent_component = parent_component
       @dispatcher = RubyWasmUi::Dispatcher.new
@@ -119,11 +119,11 @@ module RubyWasmUi
     end
 
     # @return [RubyWasmUi::Vdom]
-    def render
-      if @render.arity == 0
-        instance_exec(&@render)
+    def template
+      if @template.arity == 0
+        instance_exec(&@template)
       else
-        @render.call(self)
+        @template.call(self)
       end
     end
 
@@ -133,7 +133,7 @@ module RubyWasmUi
     def mount(host_el, index = nil)
       raise "Component is already mounted" if @is_mounted
 
-      @vdom = render
+      @vdom = template
       RubyWasmUi::Dom::MountDom.execute(@vdom, host_el, index, self)
       wire_event_handlers
 
@@ -169,7 +169,7 @@ module RubyWasmUi
     def patch
       raise "Component is not mounted" unless @is_mounted
 
-      vdom = render
+      vdom = template
       @vdom = RubyWasmUi::Dom::PatchDom.execute(@vdom, vdom, @host_el, self)
     end
 

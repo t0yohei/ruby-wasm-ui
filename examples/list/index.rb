@@ -1,7 +1,7 @@
 require "js"
 
 ListItem = RubyWasmUi.define_component(
-  render: ->() {
+  template: ->() {
     RubyWasmUi::Template::Parser.parse_and_eval(<<~HTML, binding)
       <li>{props[:todo]}</li>
     HTML
@@ -9,10 +9,10 @@ ListItem = RubyWasmUi.define_component(
 )
 
 List = RubyWasmUi.define_component(
-  render: ->() {
+  template: ->() {
     todos = props[:todos]
     list_items = todos.map { |todo| ListItem.new(todo: todo) }
-    RubyWasmUi::Vdom.h("ul", {}, list_items.map { |item| item.render })
+    RubyWasmUi::Vdom.h("ul", {}, list_items.map { |item| item.template })
   }
 )
 
