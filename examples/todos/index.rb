@@ -42,8 +42,9 @@ AppComponent = RubyWasmUi.define_component(
     # @param text [String] The TODO text
     add_todo: ->(text) {
       todo = { id: rand(10000), text: text }
-      update_state(todos: state[:todos] + [todo])
-      TodosRepository.write_todos(state[:todos] + [todo])
+      new_todos = state[:todos] + [todo]
+      update_state(todos: new_todos)
+      TodosRepository.write_todos(new_todos)
     },
 
     # Remove a TODO from the list

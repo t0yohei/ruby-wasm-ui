@@ -14,7 +14,6 @@ RIfAttributeDemo = RubyWasmUi.define_component(
   template: ->() {
     RubyWasmUi::Template::Parser.parse_and_eval(<<~HTML, binding)
       <div>
-        <h1>r-if Attribute Demo</h1>
         <p>Using r-if as an attribute (like Vue.js r-if)</p>
 
         <!-- Example 1: Simple boolean toggle -->
