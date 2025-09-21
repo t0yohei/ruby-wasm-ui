@@ -11,7 +11,7 @@ InputForm = RubyWasmUi.define_component(
   },
 
   # Render the input component
-  render: ->() {
+  template: ->() {
     RubyWasmUi::Template::Parser.parse_and_eval(<<~HTML, binding)
       <form class="w-full max-w-sm">
         <label class="block mb-2 text-sm font-medium text-700">ユーザー名</label>

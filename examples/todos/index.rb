@@ -18,7 +18,7 @@ AppComponent = RubyWasmUi.define_component(
   },
 
   # Render the complete application
-  render: ->() {
+  template: ->() {
     RubyWasmUi::Template::Parser.parse_and_eval(<<~HTML, binding)
       <template>
         <h1>My TODOs</h1>
@@ -76,7 +76,7 @@ CreateTodoComponent = RubyWasmUi.define_component(
   },
 
   # Render the new TODO input form
-  render: ->() {
+  template: ->() {
     RubyWasmUi::Template::Parser.parse_and_eval(<<~HTML, binding)
       <div>
         <label for="todo-input" type="text">New TODO</label>
@@ -113,7 +113,7 @@ CreateTodoComponent = RubyWasmUi.define_component(
 # TodoList component - manages the list of TODO items
 TodoListComponent = RubyWasmUi.define_component(
   # Render the TODO list
-  render: ->() {
+  template: ->() {
     todos = props[:todos]
 
     item_components = todos.map do |todo|
@@ -144,7 +144,7 @@ TodoItemComponent = RubyWasmUi.define_component(
   },
 
   # Render TODO item using r-if and r-else for conditional rendering
-  render: ->() {
+  template: ->() {
     RubyWasmUi::Template::Parser.parse_and_eval(<<~HTML, binding)
       <template>
         <TodoItemEditComponent
@@ -195,7 +195,7 @@ TodoItemComponent = RubyWasmUi.define_component(
 # TodoItemEdit component - handles TODO editing mode
 TodoItemEditComponent = RubyWasmUi.define_component(
   # Render TODO item in edit mode
-  render: ->() {
+  template: ->() {
     RubyWasmUi::Template::Parser.parse_and_eval(<<~HTML, binding)
       <li>
         <input
@@ -217,7 +217,7 @@ TodoItemEditComponent = RubyWasmUi.define_component(
 # TodoItemView component - handles TODO display mode
 TodoItemViewComponent = RubyWasmUi.define_component(
   # Render TODO item in view mode
-  render: ->() {
+  template: ->() {
     RubyWasmUi::Template::Parser.parse_and_eval(<<~HTML, binding)
       <li>
         <span on="{ dblclick: ->() { emit('editing') } }">

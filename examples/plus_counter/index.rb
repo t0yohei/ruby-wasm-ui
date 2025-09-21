@@ -8,7 +8,7 @@ Counter = RubyWasmUi.define_component(
       update_state(count: state[:count] + 1)
     }
   },
-  render: -> () {
+  template: -> () {
     RubyWasmUi::Template::Parser.parse_and_eval(<<~HTML, binding)
       <div>
         <p>Count: {state[:count]}</p>

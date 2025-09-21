@@ -11,7 +11,7 @@ RIfAttributeDemo = RubyWasmUi.define_component(
   },
 
   # Render the component with r-if attribute examples
-  render: ->() {
+  template: ->() {
     RubyWasmUi::Template::Parser.parse_and_eval(<<~HTML, binding)
       <div>
         <h1>r-if Attribute Demo</h1>
