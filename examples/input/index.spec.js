@@ -1,7 +1,9 @@
 import { test, expect } from "@playwright/test";
 
 test.describe("Input Example", () => {
-  test("should display input form with validation", async ({ page }) => {
+  test("should display input form and validate input length", async ({
+    page,
+  }) => {
     await page.goto("/examples/input/index.html?env=DEV");
     await page.waitForTimeout(3000);
 
@@ -10,30 +12,16 @@ test.describe("Input Example", () => {
 
     // Check form elements are present
     await expect(page.locator("label")).toHaveText("ユーザー名");
-    await expect(page.locator('input[type="text"]')).toBeVisible();
-
-    // Check initial validation message (invalid state)
-    await expect(page.locator("p").first()).toHaveText(
-      "ユーザー名は4文字以上にしてください"
-    );
-    await expect(page.locator("p").first()).toHaveClass(/text-red-600/);
+    const input = page.locator('input[type="text"]');
+    await expect(input).toBeVisible();
 
     // Check help text
     await expect(page.locator("p").last()).toHaveText(
       "*ユーザー名は4文字以上です"
     );
-  });
 
-  test("should validate input length and show appropriate messages", async ({
-    page,
-  }) => {
-    await page.goto("/examples/input/index.html?env=DEV");
-    await page.waitForTimeout(3000);
-
-    const input = page.locator('input[type="text"]');
+    // Check initial validation message (invalid state)
     const validationMessage = page.locator("p").first();
-
-    // Initially invalid (empty)
     await expect(validationMessage).toHaveText(
       "ユーザー名は4文字以上にしてください"
     );
@@ -60,7 +48,7 @@ test.describe("Input Example", () => {
     await input.fill("ab");
     await page.waitForTimeout(100);
 
-    // Should be invalid
+    // Should be invalid again
     await expect(input).toHaveValue("ab");
     await expect(validationMessage).toHaveText(
       "ユーザー名は4文字以上にしてください"

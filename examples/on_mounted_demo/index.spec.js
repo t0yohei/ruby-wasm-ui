@@ -1,7 +1,9 @@
 import { test, expect } from "@playwright/test";
 
 test.describe("On Mounted Demo Example", () => {
-  test("should display main heading and both components", async ({ page }) => {
+  test("should display components and verify on_mounted hooks execute correctly", async ({
+    page,
+  }) => {
     await page.goto("/examples/on_mounted_demo/index.html?env=DEV");
     await page.waitForTimeout(3000);
 
@@ -18,15 +20,8 @@ test.describe("On Mounted Demo Example", () => {
     await expect(page.locator("h2").last()).toHaveText(
       "Advanced Component (with args in on_mounted)"
     );
-  });
 
-  test("should show updated messages after on_mounted hooks execute", async ({
-    page,
-  }) => {
-    await page.goto("/examples/on_mounted_demo/index.html?env=DEV");
-    await page.waitForTimeout(3000);
-
-    // SimpleComponent should show updated message
+    // Verify on_mounted hooks have executed and updated the messages
     const simpleComponentMessage = page
       .locator("h2")
       .first()
@@ -36,7 +31,6 @@ test.describe("On Mounted Demo Example", () => {
       "Mounted and state updated without component argument!"
     );
 
-    // AdvancedComponent should show updated message
     const advancedComponentMessage = page
       .locator("h2")
       .last()
@@ -45,18 +39,9 @@ test.describe("On Mounted Demo Example", () => {
     await expect(advancedComponentMessage).toHaveText(
       "Mounted and state updated!"
     );
-  });
-
-  test('should not show initial "Not mounted yet" messages', async ({
-    page,
-  }) => {
-    await page.goto("/examples/on_mounted_demo/index.html?env=DEV");
-    await page.waitForTimeout(3000);
 
     // Neither component should show the initial "Not mounted yet" message
-    // since on_mounted should have updated the state
     const paragraphs = page.locator("p");
-
     for (let i = 0; i < (await paragraphs.count()); i++) {
       const text = await paragraphs.nth(i).textContent();
       expect(text).not.toBe("Not mounted yet");

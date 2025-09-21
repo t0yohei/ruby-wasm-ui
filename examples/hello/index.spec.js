@@ -1,7 +1,9 @@
 import { test, expect } from "@playwright/test";
 
 test.describe("Hello Example", () => {
-  test("should display hello world content", async ({ page }) => {
+  test("should display hello world content and handle click events", async ({
+    page,
+  }) => {
     // Navigate to the hello example
     await page.goto("/examples/hello/index.html?env=DEV");
 
@@ -27,13 +29,8 @@ test.describe("Hello Example", () => {
       (el) => getComputedStyle(el).backgroundColor
     );
     expect(computedStyle).toBe("rgb(0, 0, 255)"); // blue color
-  });
 
-  test("should handle click events on h1-b element", async ({ page }) => {
-    await page.goto("/examples/hello/index.html?env=DEV");
-    await page.waitForTimeout(3000);
-
-    // Set up console listener to capture click events
+    // Test click event handling
     const consoleMessages = [];
     page.on("console", (msg) => {
       if (msg.type() === "log") {
@@ -42,7 +39,7 @@ test.describe("Hello Example", () => {
     });
 
     // Click on the h1-b element
-    await page.locator("#h1-b").click();
+    await h1BElement.click();
 
     // Wait a bit for the console log to appear
     await page.waitForTimeout(500);
