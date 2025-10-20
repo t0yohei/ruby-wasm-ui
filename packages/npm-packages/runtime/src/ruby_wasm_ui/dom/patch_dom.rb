@@ -183,12 +183,12 @@ module RubyWasmUi
         equal_proc = ->(a, b) { NodesEqual.equal?(a, b) }
 
         diff_seq = RubyWasmUi::Utils::Arrays.diff_sequence(old_children, new_children, equal_proc)
+        offset = host_component&.offset || 0
 
         diff_seq.each do |operation|
           original_index = operation[:original_index]
           index = operation[:index]
           item = operation[:item]
-          offset = host_component&.offset || 0
 
           case operation[:op]
           when 'add'
