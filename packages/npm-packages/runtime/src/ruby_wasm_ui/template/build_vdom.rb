@@ -48,6 +48,15 @@ module RubyWasmUi
               conditional_group, next_index = RubyWasmUi::Template::BuildConditionalGroup.build_conditional_group(elements, i)
               vdom << conditional_group
               i = next_index
+            # Check for r-for attribute on all elements (including components)
+            elsif RubyWasmUi::Template::BuildForGroup.has_for_attribute?(element)
+              # Process r-for loop - the result is a map expression that returns an array
+              for_loop = RubyWasmUi::Template::BuildForGroup.build_for_loop(element)
+              if for_loop && !for_loop.empty?
+                # Wrap the map result with splat operator to expand the array
+                vdom << "*#{for_loop}"
+              end
+              i += 1
             else
               # Handle components and regular elements
               if is_component?(tag_name)
