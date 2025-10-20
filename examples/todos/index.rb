@@ -117,19 +117,20 @@ TodoListComponent = RubyWasmUi.define_component(
   template: ->() {
     todos = props[:todos]
 
-    item_components = todos.map do |todo|
-      RubyWasmUi::Vdom.h(TodoItemComponent, {
-        key: todo[:text],
-        todo: todo[:text],
-        id: todo[:id],
-        on: {
-          remove: ->(id) { emit("remove", id) },
-          edit: ->(payload) { emit("edit", payload) }
-        }
-      })
-    end
-
-    RubyWasmUi::Vdom.h("ul", {}, item_components)
+    RubyWasmUi::Template::Parser.parse_and_eval(<<~HTML, binding)
+      <ul>
+        <TodoItemComponent
+          r-for="{todo in todos}"
+          key="{todo[:id]}"
+          todo="{todo[:text]}"
+          id="{todo[:id]}"
+          on="{
+            remove: ->(id) { emit('remove', id) },
+            edit: ->(payload) { emit('edit', payload) }
+          }"
+        />
+      </ul>
+    HTML
   },
 )
 

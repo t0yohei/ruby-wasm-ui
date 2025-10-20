@@ -534,6 +534,94 @@ RSpec.describe RubyWasmUi::Template::Parser do
         final_result = described_class.preprocess_self_closing_tags(result)
         expect(final_result).to eq('<div data-template><button-component>Click me</button-component></div>')
       end
+
+      it 'handles PascalCase components with r-for attributes' do
+        template = '<TodoItemComponent r-for="{todo in todos}" key="{todo[:text]}" />'
+
+        # First convert to kebab-case
+        result = described_class.preprocess_pascal_case_component_name(template)
+        expect(result).to eq('<todo-item-component r-for="{todo in todos}" key="{todo[:text]}" />')
+
+        # Then handle self-closing tag
+        final_result = described_class.preprocess_self_closing_tags(result)
+        expect(final_result).to eq('<todo-item-component r-for="{todo in todos}" key="{todo[:text]}" ></todo-item-component>')
+      end
+    end
+
+    context 'when processing r-for attributes in templates' do
+      let(:mock_parser) { double('parser') }
+      let(:mock_document) { double('document') }
+      let(:mock_body) { double('body') }
+      let(:mock_child_nodes) { double('child_nodes') }
+      let(:mock_element) { double('element') }
+      let(:mock_attributes) { double('attributes') }
+      let(:mock_for_attribute) { double('for_attribute') }
+      let(:mock_key_attribute) { double('key_attribute') }
+
+      before do
+        # Mock preprocessing chain
+        allow(described_class).to receive(:preprocess_template_tag).with(anything).and_return('after_template_processing')
+        allow(described_class).to receive(:preprocess_pascal_case_component_name).with(anything).and_return('after_pascal_processing')
+        allow(described_class).to receive(:preprocess_self_closing_tags).with(anything).and_return('processed_template')
+
+        # Mock JS.eval, DOMParser, and JS.global
+        js_mock = double('JS')
+        allow(js_mock).to receive(:eval).with('return new DOMParser()').and_return(mock_parser)
+        allow(js_mock).to receive(:try_convert).with('processed_template').and_return('processed_template')
+        allow(js_mock).to receive(:global).and_return({ Node: { TEXT_NODE: 3, ELEMENT_NODE: 1 } })
+        stub_const('JS', js_mock)
+
+        allow(mock_parser).to receive(:call).with(:parseFromString, 'processed_template', 'text/html').and_return(mock_document)
+        allow(mock_document).to receive(:getElementsByTagName).with('body').and_return([mock_body])
+        allow(mock_body).to receive(:[]).with(:childNodes).and_return(mock_child_nodes)
+
+        # Mock element with r-for attribute
+        allow(mock_element).to receive(:[]).with(:nodeType).and_return(1) # ELEMENT_NODE
+        allow(mock_element).to receive(:[]).with(:tagName).and_return('TODO-ITEM-COMPONENT')
+        allow(mock_element).to receive(:[]).with(:attributes).and_return(mock_attributes)
+        allow(mock_element).to receive(:[]).with(:childNodes).and_return([])
+
+        # Mock r-for and key attributes
+        allow(mock_attributes).to receive(:[]).with(:length).and_return(2)
+        allow(mock_attributes).to receive(:[]).with(0).and_return(mock_for_attribute)
+        allow(mock_attributes).to receive(:[]).with(1).and_return(mock_key_attribute)
+        allow(mock_for_attribute).to receive(:[]).with(:name).and_return('r-for')
+        allow(mock_for_attribute).to receive(:[]).with(:value).and_return('{todo in todos}')
+        allow(mock_key_attribute).to receive(:[]).with(:name).and_return('key')
+        allow(mock_key_attribute).to receive(:[]).with(:value).and_return('{todo[:text]}')
+
+        # Mock child nodes as a JavaScript-like array with length and indexing
+        allow(mock_child_nodes).to receive(:[]).with(:length).and_return(1)
+        allow(mock_child_nodes).to receive(:[]).with(0).and_return(mock_element)
+
+        # Mock empty child nodes for element
+        mock_empty_nodes = double('empty_nodes')
+        allow(mock_empty_nodes).to receive(:[]).with(:length).and_return(0)
+        allow(mock_element).to receive(:[]).with(:childNodes).and_return(mock_empty_nodes)
+
+        # Mock BuildForGroup and BuildConditionalGroup
+        allow(RubyWasmUi::Template::BuildConditionalGroup).to receive(:has_conditional_attribute?).with(mock_element).and_return(false)
+        allow(RubyWasmUi::Template::BuildForGroup).to receive(:has_for_attribute?).with(mock_element).and_return(true)
+        allow(RubyWasmUi::Template::BuildForGroup).to receive(:build_for_loop).with(mock_element).and_return("todos.map do |todo|\n  RubyWasmUi::Vdom.h(TodoItemComponent, {:key => todo[:text]}, [])\nend")
+      end
+
+      it 'processes r-for attributes and generates map code' do
+        template = '<ul><TodoItemComponent r-for="{todo in todos}" key="{todo[:text]}" /></ul>'
+        
+        result = described_class.parse(template)
+        expected = "*todos.map do |todo|\n  RubyWasmUi::Vdom.h(TodoItemComponent, {:key => todo[:text]}, [])\nend"
+        expect(result).to eq(expected)
+      end
+
+      it 'evaluates r-for templates with variables' do
+        template = '<ul><TodoItemComponent r-for="{todo in todos}" key="{todo[:text]}" /></ul>'
+        
+        # Just test that parse returns the expected code structure
+        result = described_class.parse(template)
+        expect(result).to include('*todos.map do |todo|')
+        expect(result).to include('RubyWasmUi::Vdom.h(TodoItemComponent')
+        expect(result).to include('end')
+      end
     end
   end
 end

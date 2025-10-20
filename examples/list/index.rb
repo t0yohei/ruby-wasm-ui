@@ -10,9 +10,20 @@ ListItem = RubyWasmUi.define_component(
 
 List = RubyWasmUi.define_component(
   template: ->() {
-    todos = props[:todos]
-    list_items = todos.map { |todo| ListItem.new(todo: todo) }
-    RubyWasmUi::Vdom.h("ul", {}, list_items.map { |item| item.template })
+
+    RubyWasmUi::Template::Parser.parse_and_eval(<<~HTML, binding)
+      <ul>
+        <!-- component -->
+        <ListItem
+          r-for="{todo in props[:todos]}"
+          todo="{todo}"
+        />
+        <!-- element -->
+        <li r-for="todo in props[:todos]">
+          { todo }
+        </li>
+      </ul>
+    HTML
   }
 )
 
