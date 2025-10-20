@@ -87,6 +87,8 @@ RSpec.describe RubyWasmUi::Template::BuildVdom do
 
         # Mock has_conditional_attribute? to return false
         allow(RubyWasmUi::Template::BuildConditionalGroup).to receive(:has_conditional_attribute?).with(mock_element_node).and_return(false)
+        # Mock has_for_attribute? to return false
+        allow(RubyWasmUi::Template::BuildForGroup).to receive(:has_for_attribute?).with(mock_element_node).and_return(false)
       end
 
       it 'builds VDOM for element nodes' do
@@ -176,6 +178,8 @@ RSpec.describe RubyWasmUi::Template::BuildVdom do
 
         # Mock has_conditional_attribute? to return false
         allow(RubyWasmUi::Template::BuildConditionalGroup).to receive(:has_conditional_attribute?).with(mock_component_element).and_return(false)
+        # Mock has_for_attribute? to return false
+        allow(RubyWasmUi::Template::BuildForGroup).to receive(:has_for_attribute?).with(mock_component_element).and_return(false)
       end
 
       it 'builds VDOM for components with PascalCase names' do
@@ -199,6 +203,8 @@ RSpec.describe RubyWasmUi::Template::BuildVdom do
 
         # Mock has_conditional_attribute? to return true
         allow(RubyWasmUi::Template::BuildConditionalGroup).to receive(:has_conditional_attribute?).with(mock_component_element).and_return(true)
+        # Mock has_for_attribute? to return false
+        allow(RubyWasmUi::Template::BuildForGroup).to receive(:has_for_attribute?).with(mock_component_element).and_return(false)
 
         # Mock conditional attribute
         allow(mock_component_attributes).to receive(:[]).with(:length).and_return(1)
@@ -216,6 +222,82 @@ RSpec.describe RubyWasmUi::Template::BuildVdom do
         result = described_class.build(mock_component_elements)
         expect(result).to eq("conditional_code")
         expect(RubyWasmUi::Template::BuildConditionalGroup).to have_received(:build_conditional_group)
+      end
+    end
+
+    context 'when processing components with r-for attributes' do
+      let(:mock_component_elements) { double('component_elements') }
+      let(:mock_component_element) { double('component_element') }
+      let(:mock_component_attributes) { double('component_attributes') }
+      let(:mock_for_attribute) { double('for_attribute') }
+
+      before do
+        allow(mock_component_elements).to receive(:[]).with(:length).and_return(1)
+        allow(mock_component_elements).to receive(:[]).with(0).and_return(mock_component_element)
+        allow(mock_component_element).to receive(:[]).with(:nodeType).and_return(1)
+        allow(mock_component_element).to receive(:[]).with(:tagName).and_return('TODO-ITEM-COMPONENT')
+        allow(mock_component_element).to receive(:[]).with(:attributes).and_return(mock_component_attributes)
+
+        # Mock has_conditional_attribute? to return false
+        allow(RubyWasmUi::Template::BuildConditionalGroup).to receive(:has_conditional_attribute?).with(mock_component_element).and_return(false)
+        # Mock has_for_attribute? to return true
+        allow(RubyWasmUi::Template::BuildForGroup).to receive(:has_for_attribute?).with(mock_component_element).and_return(true)
+
+        # Mock r-for attribute
+        allow(mock_component_attributes).to receive(:[]).with(:length).and_return(1)
+        allow(mock_component_attributes).to receive(:[]).with(0).and_return(mock_for_attribute)
+        allow(mock_for_attribute).to receive(:[]).with(:name).and_return('r-for')
+        allow(mock_for_attribute).to receive(:[]).with(:value).and_return('{todo in todos}')
+
+        # Mock build_for_loop method
+        allow(RubyWasmUi::Template::BuildForGroup).to receive(:build_for_loop)
+          .with(mock_component_element)
+          .and_return("todos.map do |todo|\n  RubyWasmUi::Vdom.h(TodoItemComponent, {}, [])\nend")
+      end
+
+      it 'processes r-for attributes on components with splat operator' do
+        result = described_class.build(mock_component_elements)
+        expected = "*todos.map do |todo|\n  RubyWasmUi::Vdom.h(TodoItemComponent, {}, [])\nend"
+        expect(result).to eq(expected)
+        expect(RubyWasmUi::Template::BuildForGroup).to have_received(:build_for_loop)
+      end
+    end
+
+    context 'when processing elements with r-for attributes' do
+      let(:mock_element_array) { double('element_array') }
+      let(:mock_li_element) { double('li_element') }
+      let(:mock_element_attributes) { double('element_attributes') }
+      let(:mock_for_attribute) { double('for_attribute') }
+
+      before do
+        allow(mock_element_array).to receive(:[]).with(:length).and_return(1)
+        allow(mock_element_array).to receive(:[]).with(0).and_return(mock_li_element)
+        allow(mock_li_element).to receive(:[]).with(:nodeType).and_return(1)
+        allow(mock_li_element).to receive(:[]).with(:tagName).and_return('LI')
+        allow(mock_li_element).to receive(:[]).with(:attributes).and_return(mock_element_attributes)
+
+        # Mock has_conditional_attribute? to return false
+        allow(RubyWasmUi::Template::BuildConditionalGroup).to receive(:has_conditional_attribute?).with(mock_li_element).and_return(false)
+        # Mock has_for_attribute? to return true
+        allow(RubyWasmUi::Template::BuildForGroup).to receive(:has_for_attribute?).with(mock_li_element).and_return(true)
+
+        # Mock r-for attribute
+        allow(mock_element_attributes).to receive(:[]).with(:length).and_return(1)
+        allow(mock_element_attributes).to receive(:[]).with(0).and_return(mock_for_attribute)
+        allow(mock_for_attribute).to receive(:[]).with(:name).and_return('r-for')
+        allow(mock_for_attribute).to receive(:[]).with(:value).and_return('{item in items}')
+
+        # Mock build_for_loop method
+        allow(RubyWasmUi::Template::BuildForGroup).to receive(:build_for_loop)
+          .with(mock_li_element)
+          .and_return("items.map do |item|\n  RubyWasmUi::Vdom.h('li', {}, [])\nend")
+      end
+
+      it 'processes r-for attributes on HTML elements with splat operator' do
+        result = described_class.build(mock_element_array)
+        expected = "*items.map do |item|\n  RubyWasmUi::Vdom.h('li', {}, [])\nend"
+        expect(result).to eq(expected)
+        expect(RubyWasmUi::Template::BuildForGroup).to have_received(:build_for_loop)
       end
     end
   end
