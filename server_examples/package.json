@@ -1,0 +1,12 @@
+{
+  "name": "server-examples",
+  "version": "1.0.0",
+  "description": "",
+  "license": "ISC",
+  "author": "",
+  "type": "module",
+  "main": "index.js",
+  "scripts": {
+    "serve": "npx http-server . -o '.' --cors -P 'http://localhost:8080?' -c-1"
+  }
+}

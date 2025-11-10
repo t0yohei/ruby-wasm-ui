@@ -1,0 +1,58 @@
+PATH
+  remote: .
+  specs:
+    ruwi (0.1.0)
+      js (~> 2.7)
+      ruby_wasm (~> 2.7)
+
+GEM
+  remote: https://rubygems.org/
+  specs:
+    diff-lcs (1.6.2)
+    js (2.7.2)
+    logger (1.7.0)
+    rake (13.3.1)
+    rspec (3.13.2)
+      rspec-core (~> 3.13.0)
+      rspec-expectations (~> 3.13.0)
+      rspec-mocks (~> 3.13.0)
+    rspec-core (3.13.6)
+      rspec-support (~> 3.13.0)
+    rspec-expectations (3.13.5)
+      diff-lcs (>= 1.2.0, < 2.0)
+      rspec-support (~> 3.13.0)
+    rspec-mocks (3.13.7)
+      diff-lcs (>= 1.2.0, < 2.0)
+      rspec-support (~> 3.13.0)
+    rspec-support (3.13.6)
+    ruby_wasm (2.7.2)
+      logger
+    ruby_wasm (2.7.2-aarch64-linux)
+      logger
+    ruby_wasm (2.7.2-aarch64-linux-musl)
+      logger
+    ruby_wasm (2.7.2-arm64-darwin)
+      logger
+    ruby_wasm (2.7.2-x86_64-darwin)
+      logger
+    ruby_wasm (2.7.2-x86_64-linux)
+      logger
+    ruby_wasm (2.7.2-x86_64-linux-musl)
+      logger
+
+PLATFORMS
+  aarch64-linux
+  aarch64-linux-musl
+  arm64-darwin
+  ruby
+  x86_64-darwin
+  x86_64-linux
+  x86_64-linux-musl
+
+DEPENDENCIES
+  rake (~> 13.0)
+  rspec (~> 3.0)
+  ruwi!
+
+BUNDLED WITH
+   2.6.2
