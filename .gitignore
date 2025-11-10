@@ -39,3 +39,8 @@ CLAUDE.md
 # UI Tests
 playwright-report/
 test-results/
+
+# wasm builds
+build/
+rubies/
+*.wasm

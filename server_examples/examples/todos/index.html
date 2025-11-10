@@ -1,0 +1,27 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta http-equiv="X-UA-Compatible" content="IE=edge" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+
+    <script type="module">
+      import { DefaultRubyVM } from "https://cdn.jsdelivr.net/npm/@ruby/wasm-wasi@2.7.2/dist/browser/+esm";
+      const response = await fetch("../../server_examples.wasm");
+      const module = await WebAssembly.compileStreaming(response);
+      const { vm } = await DefaultRubyVM(module);
+      vm.evalAsync(`
+        require "ruwi"
+        require_relative 'examples/todos/index.rb'
+        require_relative 'examples/todos/todos_repository.rb'
+      `);
+    </script>
+
+    <title>Todos</title>
+  </head>
+
+  <body>
+    <h1>Todos</h1>
+    <div id="app"></div>
+  </body>
+</html>
