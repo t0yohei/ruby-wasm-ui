@@ -2,13 +2,9 @@ name: Playwright Tests
 
 on:
   push:
-    branches: [main, develop]
+    branches:
+      - main
   pull_request:
-    paths:
-      - "packages/npm-packages/runtime/**/*.rb"
-      - "examples/**/*.spec.js"
-      - ".github/workflows/playwright.yml"
-      - "playwright.config.js"
 
 jobs:
   test:
