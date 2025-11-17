@@ -4,7 +4,7 @@ test.describe("R-If Attribute Demo Example", () => {
   test("should display page layout and toggle message functionality", async ({
     page,
   }) => {
-    await page.goto("/examples/r_if_attribute_demo/index.html?env=DEV");
+    await page.goto("/examples/npm-packages/runtime/r_if_attribute_demo/index.html?env=DEV");
     await page.waitForTimeout(3000);
 
     // Check the page title
@@ -53,7 +53,7 @@ test.describe("R-If Attribute Demo Example", () => {
   test("should handle counter operations and conditional message display", async ({
     page,
   }) => {
-    await page.goto("/examples/r_if_attribute_demo/index.html?env=DEV");
+    await page.goto("/examples/npm-packages/runtime/r_if_attribute_demo/index.html?env=DEV");
     await page.waitForTimeout(3000);
 
     // Check counter buttons

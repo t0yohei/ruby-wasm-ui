@@ -4,7 +4,7 @@ test.describe("Random Cocktail Example", () => {
   test("should display loading state and fetch initial cocktail data", async ({
     page,
   }) => {
-    await page.goto("/examples/random_cocktail/index.html?env=DEV");
+    await page.goto("/examples/npm-packages/runtime/random_cocktail/index.html?env=DEV");
     await page.waitForTimeout(1000); // Shorter wait to catch loading state
 
     // Check the page title
@@ -62,7 +62,7 @@ test.describe("Random Cocktail Example", () => {
   });
 
   test("should fetch new cocktail when button is clicked", async ({ page }) => {
-    await page.goto("/examples/random_cocktail/index.html?env=DEV");
+    await page.goto("/examples/npm-packages/runtime/random_cocktail/index.html?env=DEV");
     await page.waitForTimeout(3000);
 
     // Wait for initial cocktail to load

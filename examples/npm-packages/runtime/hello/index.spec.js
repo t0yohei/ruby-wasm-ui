@@ -5,7 +5,7 @@ test.describe("Hello Example", () => {
     page,
   }) => {
     // Navigate to the hello example
-    await page.goto("/examples/hello/index.html?env=DEV");
+    await page.goto("/examples/npm-packages/runtime/hello/index.html?env=DEV");
 
     // Wait for Ruby WASM to load and initialize
     await page.waitForTimeout(3000);

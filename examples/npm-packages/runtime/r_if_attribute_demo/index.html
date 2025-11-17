@@ -1,28 +1,34 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="ja">
   <head>
     <meta charset="UTF-8" />
-    <meta http-equiv="X-UA-Compatible" content="IE=edge" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-
+    <title>r-if Attribute Demo</title>
     <script>
       const urlParams = new URLSearchParams(window.location.search);
       const isDev = urlParams.get("env") === "DEV";
       const script = document.createElement("script");
       script.defer = true;
       script.src = isDev
-        ? "../../packages/npm-packages/runtime/dist/ruby-wasm-ui.js"
+        ? "../../../../packages/npm-packages/runtime/dist/ruby-wasm-ui.js"
         : "https://unpkg.com/ruby-wasm-ui@latest";
       document.head.appendChild(script);
     </script>
     <script defer type="text/ruby" src="index.rb"></script>
-    <script defer src="https://cdn.tailwindcss.com"></script>
-
-    <title>Input</title>
+    <style>
+      body {
+        font-family: Arial, sans-serif;
+        max-width: 600px;
+        margin: 20px auto;
+        padding: 20px;
+        background-color: #f5f5f5;
+      }
+    </style>
   </head>
-
   <body>
-    <h1>Input</h1>
-    <div id="app"></div>
+    <h1>r-if Attribute Demo</h1>
+    <div id="app">
+      <!-- Ruby WASM UI app will mount here -->
+    </div>
   </body>
 </html>
