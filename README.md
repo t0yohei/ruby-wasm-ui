@@ -88,6 +88,113 @@ app_element = JS.global[:document].getElementById("app")
 app.mount(app_element)
 ```
 
+## Using as a Gem
+
+You can also use `ruby_wasm_ui` as a Ruby gem with `rbwasm` to build your application as a WASM file.
+
+### Setup
+
+1. Add `ruby_wasm_ui` to your `Gemfile`:
+
+```ruby
+# frozen_string_literal: true
+
+source "https://rubygems.org"
+
+gem "ruby_wasm_ui"
+```
+
+2. Install dependencies:
+
+```bash
+bundle install
+```
+
+### Building Your Application
+
+1. Build Ruby WASM:
+
+```bash
+bundle exec rbwasm build --ruby-version 3.4 -o ruby.wasm
+```
+
+2. Pack your application files:
+
+```bash
+bundle exec rbwasm pack ruby.wasm --dir ./src::./src -o src.wasm
+```
+
+This command packs your Ruby files from the `./src` directory into the WASM file.
+
+### Creating Your HTML File
+
+Create an HTML file in the `src` directory that loads the WASM file:
+
+```html
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <title>My App</title>
+    <script type="module">
+      import { DefaultRubyVM } from "https://cdn.jsdelivr.net/npm/@ruby/wasm-wasi@2.7.2/dist/browser/+esm";
+      const response = await fetch("../src.wasm");
+      const module = await WebAssembly.compileStreaming(response);
+      const { vm } = await DefaultRubyVM(module);
+      vm.evalAsync(`
+        require "ruby_wasm_ui"
+        require_relative './src/app.rb'
+      `);
+    </script>
+  </head>
+  <body>
+    <div id="app"></div>
+  </body>
+</html>
+```
+
+### Example Project Structure
+
+```
+my-app/
+├── Gemfile
+├── src.wasm
+└── src/
+    ├── app.rb
+    └── index.html
+```
+
+Your `src/app.rb` file can use `ruby_wasm_ui` just like in the Quick Start example:
+
+```ruby
+require "js"
+
+CounterComponent = RubyWasmUi.define_component(
+  state: ->(props) {
+    { count: props[:count] || 0 }
+  },
+  template: ->() {
+    RubyWasmUi::Template::Parser.parse_and_eval(<<~HTML, binding)
+      <div>
+        <div>{state[:count]}</div>
+        <button on="{ click: -> { increment } }">Increment</button>
+      </div>
+    HTML
+  },
+  methods: {
+    increment: ->() {
+      update_state(count: state[:count] + 1)
+    }
+  }
+)
+
+app = RubyWasmUi::App.create(CounterComponent, count: 0)
+app_element = JS.global[:document].getElementById("app")
+app.mount(app_element)
+```
+
+See the [examples](examples) directory for a complete working example.
+
 ## Documentation
 
 - [Conditional Rendering with r-if](docs/conditional-rendering.md)

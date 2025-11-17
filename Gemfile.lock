@@ -1,0 +1,65 @@
+PATH
+  remote: .
+  specs:
+    ruby_wasm_ui (0.8.1)
+      js (~> 2.7)
+      ruby_wasm (~> 2.7)
+
+GEM
+  remote: https://rubygems.org/
+  specs:
+    date (3.5.0)
+    erb (6.0.0)
+    io-console (0.8.1)
+    irb (1.15.3)
+      pp (>= 0.6.0)
+      rdoc (>= 4.0.0)
+      reline (>= 0.4.2)
+    js (2.7.2)
+    logger (1.7.0)
+    pp (0.6.3)
+      prettyprint
+    prettyprint (0.2.0)
+    psych (5.2.6)
+      date
+      stringio
+    rake (13.3.1)
+    rdoc (6.15.1)
+      erb
+      psych (>= 4.0.0)
+      tsort
+    reline (0.6.3)
+      io-console (~> 0.5)
+    ruby_wasm (2.7.2)
+      logger
+    ruby_wasm (2.7.2-aarch64-linux)
+      logger
+    ruby_wasm (2.7.2-aarch64-linux-musl)
+      logger
+    ruby_wasm (2.7.2-arm64-darwin)
+      logger
+    ruby_wasm (2.7.2-x86_64-darwin)
+      logger
+    ruby_wasm (2.7.2-x86_64-linux)
+      logger
+    ruby_wasm (2.7.2-x86_64-linux-musl)
+      logger
+    stringio (3.1.8)
+    tsort (0.2.0)
+
+PLATFORMS
+  aarch64-linux
+  aarch64-linux-musl
+  arm64-darwin
+  ruby
+  x86_64-darwin
+  x86_64-linux
+  x86_64-linux-musl
+
+DEPENDENCIES
+  irb
+  rake (~> 13.0)
+  ruby_wasm_ui!
+
+BUNDLED WITH
+   2.7.2
