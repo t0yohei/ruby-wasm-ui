@@ -39,3 +39,19 @@ CLAUDE.md
 # UI Tests
 playwright-report/
 test-results/
+
+# ruby gems
+/.bundle/
+/.yardoc
+/_yardoc/
+/coverage/
+/doc/
+/pkg/
+/spec/reports/
+/tmp/
+
+
+# wasm builds
+build/
+rubies/
+*.wasm
