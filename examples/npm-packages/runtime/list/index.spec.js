@@ -2,7 +2,7 @@ import { test, expect } from "@playwright/test";
 
 test.describe("List Example", () => {
   test("should display list with initial todos", async ({ page }) => {
-    await page.goto("/examples/list/index.html?env=DEV");
+    await page.goto("/examples/npm-packages/runtime/list/index.html?env=DEV");
     await page.waitForTimeout(3000);
 
     // Check the page title
@@ -25,7 +25,7 @@ test.describe("List Example", () => {
   });
 
   test("should render r-for with components correctly", async ({ page }) => {
-    await page.goto("/examples/list/index.html?env=DEV");
+    await page.goto("/examples/npm-packages/runtime/list/index.html?env=DEV");
     await page.waitForTimeout(3000);
 
     // Check that ListItem components are rendered (first 3 items)
@@ -35,7 +35,7 @@ test.describe("List Example", () => {
   });
 
   test("should render r-for with elements correctly", async ({ page }) => {
-    await page.goto("/examples/list/index.html?env=DEV");
+    await page.goto("/examples/npm-packages/runtime/list/index.html?env=DEV");
     await page.waitForTimeout(3000);
 
     // Check that direct li elements are rendered (last 3 items)

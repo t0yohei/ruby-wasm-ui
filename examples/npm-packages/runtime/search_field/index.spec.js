@@ -4,7 +4,7 @@ test.describe("Search Field Example", () => {
   test("should display search demo and handle various input scenarios", async ({
     page,
   }) => {
-    await page.goto("/examples/search_field/index.html?env=DEV");
+    await page.goto("/examples/npm-packages/runtime/search_field/index.html?env=DEV");
     await page.waitForTimeout(3000);
 
     // Check the page title

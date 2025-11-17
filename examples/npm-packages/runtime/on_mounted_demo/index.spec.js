@@ -4,7 +4,7 @@ test.describe("On Mounted Demo Example", () => {
   test("should display components and verify on_mounted hooks execute correctly", async ({
     page,
   }) => {
-    await page.goto("/examples/on_mounted_demo/index.html?env=DEV");
+    await page.goto("/examples/npm-packages/runtime/on_mounted_demo/index.html?env=DEV");
     await page.waitForTimeout(3000);
 
     // Check the page title

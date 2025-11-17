@@ -4,7 +4,7 @@ test.describe("Counter Example", () => {
   test("should display counter and handle increment/decrement operations", async ({
     page,
   }) => {
-    await page.goto("/examples/counter/index.html?env=DEV");
+    await page.goto("/examples/npm-packages/runtime/counter/index.html?env=DEV");
     await page.waitForTimeout(3000);
 
     // Check the page title

@@ -4,7 +4,7 @@ test.describe("Input Example", () => {
   test("should display input form and validate input length", async ({
     page,
   }) => {
-    await page.goto("/examples/input/index.html?env=DEV");
+    await page.goto("/examples/npm-packages/runtime/input/index.html?env=DEV");
     await page.waitForTimeout(3000);
 
     // Check the page title

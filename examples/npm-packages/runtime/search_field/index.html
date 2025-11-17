@@ -11,17 +11,17 @@
       const script = document.createElement("script");
       script.defer = true;
       script.src = isDev
-        ? "../../packages/npm-packages/runtime/dist/ruby-wasm-ui.js"
+        ? "../../../../packages/npm-packages/runtime/dist/ruby-wasm-ui.js"
         : "https://unpkg.com/ruby-wasm-ui@latest";
       document.head.appendChild(script);
     </script>
     <script defer type="text/ruby" src="index.rb"></script>
 
-    <title>Random Cocktail</title>
+    <title>Search Field</title>
   </head>
 
   <body>
-    <h1>Random Cocktail</h1>
+    <h1>Search Field</h1>
     <div id="app"></div>
   </body>
 </html>

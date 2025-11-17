@@ -3,7 +3,7 @@ import { test, expect } from "@playwright/test";
 test.describe("Todos Example", () => {
   // Clear localStorage before each test to ensure clean state
   test.beforeEach(async ({ page }) => {
-    await page.goto("/examples/todos/index.html?env=DEV");
+    await page.goto("/examples/npm-packages/runtime/todos/index.html?env=DEV");
     await page.evaluate(() => localStorage.clear());
     await page.reload();
     await page.waitForTimeout(3000);
