@@ -1,7 +1,7 @@
 PATH
   remote: .
   specs:
-    ruby_wasm_ui (0.1.0)
+    ruby_wasm_ui (0.8.1)
       js (~> 2.7)
       ruby_wasm (~> 2.7)
 
