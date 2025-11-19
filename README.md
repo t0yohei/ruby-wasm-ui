@@ -167,8 +167,6 @@ my-app/
 Your `src/app.rb` file can use `ruby_wasm_ui` just like in the Quick Start example:
 
 ```ruby
-require "js"
-
 CounterComponent = RubyWasmUi.define_component(
   state: ->(props) {
     { count: props[:count] || 0 }
