@@ -4,8 +4,7 @@ require 'spec_helper'
 require 'fileutils'
 require 'tmpdir'
 
-# TODO: 一時的にスキップ - 他のテストが実行されるか確認（dev_spec.rbが実行されるとRSpecが中断される）
-RSpec.xdescribe RubyWasmUi::Cli::Command::Dev do
+RSpec.describe RubyWasmUi::Cli::Command::Dev do
   let(:dev_instance) { described_class.new }
   let(:temp_dir) { Dir.mktmpdir }
   let(:original_dir) { Dir.pwd }
@@ -78,22 +77,20 @@ RSpec.xdescribe RubyWasmUi::Cli::Command::Dev do
         ).to_stdout
       end
 
-      # TODO: 一時的にスキップ - Process.kill('INT', Process.pid)がRSpec全体を中断させるため
-      xit 'starts file watcher' do
+      it 'starts file watcher' do
         file_watcher_called = false
-        allow(dev_instance).to receive(:start_file_watcher) { file_watcher_called = true }
-        allow(dev_instance).to receive(:start_server) do
-          # Simulate blocking server
-          sleep 0.01
-        end
         # Allow Thread.new to actually create threads so start_file_watcher gets called
         allow(Thread).to receive(:new).and_call_original
-        Thread.new { sleep 0.02; Process.kill('INT', Process.pid) }
-        begin
-          dev_instance.run([])
-        rescue SystemExit
-          # Expected when server is killed
+        allow(dev_instance).to receive(:start_file_watcher) do
+          file_watcher_called = true
         end
+        # Mock start_server to block briefly to allow thread to execute
+        allow(dev_instance).to receive(:start_server) do
+          sleep 0.1  # Give thread time to execute
+        end
+
+        dev_instance.run([])
+
         expect(file_watcher_called).to be true
       end
 
@@ -205,10 +202,10 @@ RSpec.xdescribe RubyWasmUi::Cli::Command::Dev do
         dev_instance.send(:start_file_watcher)
         callback = callback_container[:callback]
         expect(callback).not_to be_nil
-        
+
         # Allow Thread.new to create actual threads for the debounce logic
         allow(Thread).to receive(:new).and_call_original
-        
+
         callback.call(['src/app.rb'], [], [])
         sleep 0.6 # Wait for debounce
         expect(dev_instance).to have_received(:build)
@@ -218,10 +215,10 @@ RSpec.xdescribe RubyWasmUi::Cli::Command::Dev do
         dev_instance.send(:start_file_watcher)
         callback = callback_container[:callback]
         expect(callback).not_to be_nil
-        
+
         # Allow Thread.new to create actual threads for the debounce logic
         allow(Thread).to receive(:new).and_call_original
-        
+
         callback.call(['src/app.rb.swp'], [], [])
         sleep 0.6
         expect(dev_instance).not_to have_received(:build)
@@ -252,64 +249,74 @@ RSpec.xdescribe RubyWasmUi::Cli::Command::Dev do
 
     before do
       FileUtils.mkdir_p('src')
-      stub_const('Rack::Handler::Puma', puma_handler_class)
-      allow(Kernel).to receive(:require).with('rack/handler/puma')
     end
 
-    it 'outputs server start message' do
-      allow(Rack::Handler::Puma).to receive(:run)
-      expect { dev_instance.send(:start_server) }.to output(
-        /Starting development server on http:\/\/localhost:8080/
-      ).to_stdout
-    end
-
-    it 'outputs instructions message' do
-      allow(Rack::Handler::Puma).to receive(:run)
-      expect { dev_instance.send(:start_server) }.to output(
-        /Press Ctrl+C to stop/
-      ).to_stdout
-    end
-
-    it 'starts Puma server' do
-      expect(Rack::Handler::Puma).to receive(:run).with(
-        anything,
-        Port: 8080,
-        Host: '0.0.0.0'
-      )
-      dev_instance.send(:start_server)
-    end
-
-    it 'outputs handler info message' do
-      allow(Rack::Handler::Puma).to receive(:run)
-      expect { dev_instance.send(:start_server) }.to output(
-        /Using handler: puma/
-      ).to_stdout
-    end
-
-    it 'opens browser after server starts' do
-      allow(Rack::Handler::Puma).to receive(:run)
-      browser_thread_called = false
-      
-      allow(Thread).to receive(:new) do |&block|
-        if block
-          browser_thread_called = true
-          # Execute block immediately for testing (without sleep)
-          allow(Kernel).to receive(:sleep)
-          block.call
-        end
-        instance_double(Thread)
+    context 'when Puma handler is available' do
+      before do
+        stub_const('Rack::Handler::Puma', puma_handler_class)
+        # Mock require to prevent LoadError for rack/handler/puma
+        allow(dev_instance).to receive(:require).with('rack/handler/puma').and_return(true)
+        # Prevent browser from opening in all tests by default
+        allow(dev_instance).to receive(:open_browser)
+        # Prevent Thread.new from creating actual threads by default
+        allow(Thread).to receive(:new).and_return(instance_double(Thread))
       end
-      
-      expect(dev_instance).to receive(:open_browser).with('http://localhost:8080/src/index.html')
-      
-      dev_instance.send(:start_server)
-      
-      expect(browser_thread_called).to be true
-    end
+
+      it 'outputs server start message' do
+        allow(Rack::Handler::Puma).to receive(:run)
+        expect { dev_instance.send(:start_server) }.to output(
+          a_string_including('Starting development server on http://localhost:8080')
+        ).to_stdout
+      end
+
+      it 'outputs instructions message' do
+        allow(Rack::Handler::Puma).to receive(:run)
+        expect { dev_instance.send(:start_server) }.to output(
+          a_string_including('Press Ctrl+C to stop')
+        ).to_stdout
+      end
+
+        it 'starts Puma server' do
+        expect(Rack::Handler::Puma).to receive(:run).with(
+          anything,
+          Port: 8080,
+          Host: '0.0.0.0'
+        )
+        dev_instance.send(:start_server)
+      end
+
+      it 'outputs handler info message' do
+        allow(Rack::Handler::Puma).to receive(:run)
+        expect { dev_instance.send(:start_server) }.to output(
+          a_string_including('Using handler: puma')
+        ).to_stdout
+      end
+
+        it 'opens browser after server starts' do
+        allow(Rack::Handler::Puma).to receive(:run)
+        browser_thread_called = false
+
+        allow(Thread).to receive(:new) do |&block|
+          if block
+            browser_thread_called = true
+            # Execute block immediately for testing (without sleep)
+            allow(Kernel).to receive(:sleep)
+            block.call
+          end
+          instance_double(Thread)
+        end
+
+        expect(dev_instance).to receive(:open_browser).with('http://localhost:8080/src/index.html').and_return(nil)
+
+        dev_instance.send(:start_server)
+
+        expect(browser_thread_called).to be true
+        end
+      end
 
     context 'when Puma handler is not available' do
       before do
-        allow(Kernel).to receive(:require).with('rack/handler/puma').and_raise(LoadError.new('cannot load such file'))
+        allow(dev_instance).to receive(:require).with('rack/handler/puma').and_raise(LoadError.new('cannot load such file'))
       end
 
       it 'outputs error message' do
@@ -327,6 +334,8 @@ RSpec.xdescribe RubyWasmUi::Cli::Command::Dev do
 
     context 'when server raises an error' do
       before do
+        stub_const('Rack::Handler::Puma', puma_handler_class)
+        allow(dev_instance).to receive(:require).with('rack/handler/puma').and_return(true)
         allow(Rack::Handler::Puma).to receive(:run).and_raise(StandardError.new('Server error'))
       end
 
@@ -349,7 +358,7 @@ RSpec.xdescribe RubyWasmUi::Cli::Command::Dev do
       end
 
       it 'calls open command' do
-        expect(dev_instance).to receive(:system).with('open', 'http://localhost:8080/src/index.html')
+        expect(dev_instance).to receive(:system).with('open', 'http://localhost:8080/src/index.html').and_return(true)
         dev_instance.send(:open_browser, 'http://localhost:8080/src/index.html')
       end
 
@@ -372,7 +381,7 @@ RSpec.xdescribe RubyWasmUi::Cli::Command::Dev do
       end
 
       it 'calls xdg-open command' do
-        expect(dev_instance).to receive(:system).with('xdg-open', 'http://localhost:8080/src/index.html')
+        expect(dev_instance).to receive(:system).with('xdg-open', 'http://localhost:8080/src/index.html').and_return(true)
         dev_instance.send(:open_browser, 'http://localhost:8080/src/index.html')
       end
     end
@@ -383,7 +392,7 @@ RSpec.xdescribe RubyWasmUi::Cli::Command::Dev do
       end
 
       it 'calls start command' do
-        expect(dev_instance).to receive(:system).with('start', 'http://localhost:8080/src/index.html')
+        expect(dev_instance).to receive(:system).with('start', 'http://localhost:8080/src/index.html').and_return(true)
         dev_instance.send(:open_browser, 'http://localhost:8080/src/index.html')
       end
     end

@@ -4,9 +4,7 @@ require 'spec_helper'
 require 'fileutils'
 require 'tmpdir'
 
-# TODO: 一時的にコメントアウト - 他のテストが実行されるか確認
-# RSpec.describe RubyWasmUi::Cli::Command::Base do
-RSpec.xdescribe RubyWasmUi::Cli::Command::Base do
+RSpec.describe RubyWasmUi::Cli::Command::Base do
   let(:base_instance) { described_class.new }
 
   describe '#run' do
@@ -233,10 +231,6 @@ RSpec.xdescribe RubyWasmUi::Cli::Command::Base do
     end
 
     context 'when Ruby version is less than 3.2' do
-      before do
-        allow(Kernel).to receive(:exit)
-      end
-
       context 'when Ruby version is 3.1' do
         before do
           stub_const('RUBY_VERSION', '3.1.5')
@@ -245,8 +239,9 @@ RSpec.xdescribe RubyWasmUi::Cli::Command::Base do
         it 'outputs error message and exits' do
           expect { base_instance.send(:check_ruby_version) }.to output(
             /\[ERROR\] Ruby WASM requires Ruby 3.2 or higher. Current version: 3.1.5/
-          ).to_stdout
-          expect(Kernel).to have_received(:exit).with(1)
+          ).to_stdout.and raise_error(SystemExit) do |error|
+            expect(error.status).to eq(1)
+          end
         end
       end
 
@@ -258,8 +253,9 @@ RSpec.xdescribe RubyWasmUi::Cli::Command::Base do
         it 'outputs error message and exits' do
           expect { base_instance.send(:check_ruby_version) }.to output(
             /\[ERROR\] Ruby WASM requires Ruby 3.2 or higher. Current version: 2.7.8/
-          ).to_stdout
-          expect(Kernel).to have_received(:exit).with(1)
+          ).to_stdout.and raise_error(SystemExit) do |error|
+            expect(error.status).to eq(1)
+          end
         end
       end
     end
@@ -359,5 +355,4 @@ RSpec.xdescribe RubyWasmUi::Cli::Command::Base do
       base_instance.send(:build_ruby_wasm, '3.4')
     end
   end
-# end
 end

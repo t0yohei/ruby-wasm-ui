@@ -50,7 +50,7 @@ module RubyWasmUi
             unless exit_status.success?
               log_error("Command failed: #{command}")
               if exit_on_error
-                exit exit_status.exitstatus
+                raise SystemExit.new(exit_status.exitstatus)
               else
                 return false
               end
@@ -63,14 +63,14 @@ module RubyWasmUi
         def ensure_src_directory
           unless Dir.exist?("src")
             log_error("src directory not found. Please run 'ruby-wasm-ui setup' first.")
-            exit 1
+            raise SystemExit.new(1)
           end
         end
 
         def ensure_ruby_wasm
           unless File.exist?("ruby.wasm")
             log_error("ruby.wasm not found. Please run 'ruby-wasm-ui setup' first.")
-            exit 1
+            raise SystemExit.new(1)
           end
         end
 
@@ -127,7 +127,7 @@ module RubyWasmUi
 
           if major < 3 || (major == 3 && minor < 2)
             log_error("Ruby WASM requires Ruby 3.2 or higher. Current version: #{RUBY_VERSION}")
-            exit 1
+            raise SystemExit.new(1)
           end
 
           "#{major}.#{minor}"

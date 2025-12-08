@@ -176,7 +176,7 @@ module RubyWasmUi
           trap("INT") do
             log_info("\nShutting down server...")
             cleanup
-            exit 0
+            raise SystemExit.new(0)
           end
 
           # Use Puma handler (Rack 3.0 compatible)
@@ -194,11 +194,11 @@ module RubyWasmUi
           rescue LoadError => e
             log_error("Puma handler not available: #{e.message}")
             log_error("Please ensure puma gem is installed: gem install puma")
-            exit 1
+            raise SystemExit.new(1)
           end
         rescue => e
           log_error("Server error: #{e.message}")
-          exit 1
+          raise SystemExit.new(1)
         end
       end
     end

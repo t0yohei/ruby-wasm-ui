@@ -20,7 +20,7 @@ module RubyWasmUi
 
         if command_name.nil?
           show_usage
-          exit 1
+          raise SystemExit.new(1)
         end
 
         command_class = COMMANDS[command_name]
@@ -28,7 +28,7 @@ module RubyWasmUi
           puts "Unknown command: #{command_name}"
           puts ""
           show_usage
-          exit 1
+          raise SystemExit.new(1)
         end
 
         command_class.new.run(argv[1..-1])
