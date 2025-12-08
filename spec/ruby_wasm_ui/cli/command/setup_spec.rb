@@ -13,7 +13,8 @@ RSpec.describe RubyWasmUi::Cli::Command::Setup do
 
   describe '#run' do
     before do
-      allow(setup_instance).to receive(:run_command)
+      allow(setup_instance).to receive(:configure_excluded_gems)
+      allow(setup_instance).to receive(:build_ruby_wasm)
       allow(setup_instance).to receive(:update_gitignore)
     end
 
@@ -23,11 +24,14 @@ RSpec.describe RubyWasmUi::Cli::Command::Setup do
       ).to_stdout
     end
 
+    it 'configures excluded gems' do
+      expect(setup_instance).to receive(:configure_excluded_gems)
+      setup_instance.run([])
+    end
+
     it 'executes rbwasm build command' do
       ruby_version = RUBY_VERSION.split('.')[0..1].join('.')
-      expect(setup_instance).to receive(:run_command).with(
-        "bundle exec rbwasm build --ruby-version #{ruby_version} -o ruby.wasm"
-      )
+      expect(setup_instance).to receive(:build_ruby_wasm).with(ruby_version)
       setup_instance.run([])
     end
 
@@ -45,6 +49,9 @@ RSpec.describe RubyWasmUi::Cli::Command::Setup do
     end
 
     it 'outputs progress messages' do
+      expect { setup_instance.run([]) }.to output(
+        /Configuring excluded gems/
+      ).to_stdout
       expect { setup_instance.run([]) }.to output(
         /Building Ruby WASM/
       ).to_stdout
@@ -71,7 +78,8 @@ RSpec.describe RubyWasmUi::Cli::Command::Setup do
         end
 
         it 'does not execute rbwasm build command' do
-          expect(setup_instance).not_to receive(:run_command)
+          expect(setup_instance).not_to receive(:build_ruby_wasm)
+          expect(setup_instance).not_to receive(:configure_excluded_gems)
           setup_instance.run([])
         end
       end
@@ -93,16 +101,87 @@ RSpec.describe RubyWasmUi::Cli::Command::Setup do
     context 'when Ruby version is 3.2' do
       before do
         stub_const('RUBY_VERSION', '3.2.0')
-        allow(setup_instance).to receive(:run_command)
+        allow(setup_instance).to receive(:configure_excluded_gems)
+        allow(setup_instance).to receive(:build_ruby_wasm)
         allow(setup_instance).to receive(:update_gitignore)
       end
 
       it 'executes rbwasm build command with correct version' do
-        expect(setup_instance).to receive(:run_command).with(
-          'bundle exec rbwasm build --ruby-version 3.2 -o ruby.wasm'
-        )
+        expect(setup_instance).to receive(:build_ruby_wasm).with('3.2')
         setup_instance.run([])
       end
+    end
+  end
+
+  describe '#configure_excluded_gems' do
+    before do
+      # Clear EXCLUDED_GEMS before each test
+      RubyWasm::Packager::EXCLUDED_GEMS.clear if defined?(RubyWasm::Packager::EXCLUDED_GEMS)
+    end
+
+    it 'excludes rack, puma, nio4r, listen, and ffi gems' do
+      allow(Bundler).to receive(:definition).and_return(
+        double(
+          resolve: double(
+            materialize: [
+              double(name: 'rack'),
+              double(name: 'puma'),
+              double(name: 'nio4r'),
+              double(name: 'listen'),
+              double(name: 'ffi'),
+              double(name: 'js'),
+              double(name: 'ruby_wasm')
+            ]
+          ),
+          requested_dependencies: []
+        )
+      )
+
+      setup_instance.send(:configure_excluded_gems)
+
+      expect(RubyWasm::Packager::EXCLUDED_GEMS).to include('rack', 'puma', 'nio4r', 'listen', 'ffi')
+      expect(RubyWasm::Packager::EXCLUDED_GEMS).not_to include('js', 'ruby_wasm')
+    end
+
+    it 'always excludes nio4r, puma, rack, listen, and ffi even if not in dependencies' do
+      allow(Bundler).to receive(:definition).and_return(
+        double(
+          resolve: double(
+            materialize: [
+              double(name: 'js'),
+              double(name: 'ruby_wasm')
+            ]
+          ),
+          requested_dependencies: []
+        )
+      )
+
+      setup_instance.send(:configure_excluded_gems)
+
+      # Always excluded gems should be in the list even if not in dependencies
+      expect(RubyWasm::Packager::EXCLUDED_GEMS).to include('nio4r', 'puma', 'rack', 'listen', 'ffi')
+      expect(RubyWasm::Packager::EXCLUDED_GEMS).not_to include('js', 'ruby_wasm')
+    end
+
+    it 'excludes development/test gems' do
+      allow(Bundler).to receive(:definition).and_return(
+        double(
+          resolve: double(
+            materialize: [
+              double(name: 'rspec'),
+              double(name: 'rubocop'),
+              double(name: 'rake'),
+              double(name: 'js')
+            ]
+          ),
+          requested_dependencies: []
+        )
+      )
+
+      setup_instance.send(:configure_excluded_gems)
+
+      expect(RubyWasm::Packager::EXCLUDED_GEMS).to include('rspec', 'rubocop', 'rake')
+      expect(RubyWasm::Packager::EXCLUDED_GEMS).not_to include('js')
     end
   end
 end
