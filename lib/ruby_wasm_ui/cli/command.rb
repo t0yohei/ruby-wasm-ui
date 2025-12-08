@@ -3,6 +3,7 @@
 require_relative "command/setup"
 require_relative "command/dev"
 require_relative "command/pack"
+require_relative "command/rebuild"
 
 module RubyWasmUi
   module Cli
@@ -10,7 +11,8 @@ module RubyWasmUi
       COMMANDS = {
         "setup" => Command::Setup,
         "dev" => Command::Dev,
-        "pack" => Command::Pack
+        "pack" => Command::Pack,
+        "rebuild" => Command::Rebuild
       }.freeze
 
       def self.run(argv)

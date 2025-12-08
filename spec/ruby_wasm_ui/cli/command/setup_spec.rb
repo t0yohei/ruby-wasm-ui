@@ -1,6 +1,7 @@
 # frozen_string_literal: true
 
 require 'spec_helper'
+require 'tmpdir'
 
 RSpec.describe RubyWasmUi::Cli::Command::Setup do
   let(:setup_instance) { described_class.new }
@@ -13,6 +14,7 @@ RSpec.describe RubyWasmUi::Cli::Command::Setup do
 
   describe '#run' do
     before do
+      allow(setup_instance).to receive(:check_ruby_version).and_return(RUBY_VERSION.split('.')[0..1].join('.'))
       allow(setup_instance).to receive(:configure_excluded_gems)
       allow(setup_instance).to receive(:build_ruby_wasm)
       allow(setup_instance).to receive(:update_gitignore)
@@ -23,6 +25,11 @@ RSpec.describe RubyWasmUi::Cli::Command::Setup do
       expect { setup_instance.run([]) }.to output(
         /Setting up ruby-wasm-ui project/
       ).to_stdout
+    end
+
+    it 'checks Ruby version' do
+      expect(setup_instance).to receive(:check_ruby_version)
+      setup_instance.run([])
     end
 
     it 'configures excluded gems' do
@@ -69,47 +76,25 @@ RSpec.describe RubyWasmUi::Cli::Command::Setup do
       setup_instance.run([])
     end
 
-    context 'when Ruby version is less than 3.2' do
+    context 'when Ruby version check fails' do
       before do
+        allow(setup_instance).to receive(:check_ruby_version).and_raise(SystemExit.new(1))
         allow(Kernel).to receive(:exit)
       end
 
-      context 'when Ruby version is 3.1' do
-        before do
-          stub_const('RUBY_VERSION', '3.1.5')
-        end
-
-        it 'outputs error message and exits' do
-          expect { setup_instance.run([]) }.to output(
-            /\[ERROR\] Ruby WASM requires Ruby 3.2 or higher. Current version: 3.1.5/
-          ).to_stdout
-          expect(Kernel).to have_received(:exit).with(1)
-        end
-
-        it 'does not execute rbwasm build command' do
-          expect(setup_instance).not_to receive(:build_ruby_wasm)
-          expect(setup_instance).not_to receive(:configure_excluded_gems)
-          setup_instance.run([])
-        end
-      end
-
-      context 'when Ruby version is 2.7' do
-        before do
-          stub_const('RUBY_VERSION', '2.7.8')
-        end
-
-        it 'outputs error message and exits' do
-          expect { setup_instance.run([]) }.to output(
-            /\[ERROR\] Ruby WASM requires Ruby 3.2 or higher. Current version: 2.7.8/
-          ).to_stdout
-          expect(Kernel).to have_received(:exit).with(1)
-        end
+      it 'does not execute subsequent steps' do
+        expect(setup_instance).not_to receive(:configure_excluded_gems)
+        expect(setup_instance).not_to receive(:build_ruby_wasm)
+        expect(setup_instance).not_to receive(:update_gitignore)
+        expect(setup_instance).not_to receive(:create_initial_files)
+        expect { setup_instance.run([]) }.to raise_error(SystemExit)
       end
     end
 
     context 'when Ruby version is 3.2' do
       before do
         stub_const('RUBY_VERSION', '3.2.0')
+        allow(setup_instance).to receive(:check_ruby_version).and_return('3.2')
         allow(setup_instance).to receive(:configure_excluded_gems)
         allow(setup_instance).to receive(:build_ruby_wasm)
         allow(setup_instance).to receive(:update_gitignore)
@@ -120,78 +105,6 @@ RSpec.describe RubyWasmUi::Cli::Command::Setup do
         expect(setup_instance).to receive(:build_ruby_wasm).with('3.2')
         setup_instance.run([])
       end
-    end
-  end
-
-  describe '#configure_excluded_gems' do
-    before do
-      # Clear EXCLUDED_GEMS before each test
-      RubyWasm::Packager::EXCLUDED_GEMS.clear if defined?(RubyWasm::Packager::EXCLUDED_GEMS)
-    end
-
-    it 'excludes rack, puma, nio4r, listen, and ffi gems' do
-      allow(Bundler).to receive(:definition).and_return(
-        double(
-          resolve: double(
-            materialize: [
-              double(name: 'rack'),
-              double(name: 'puma'),
-              double(name: 'nio4r'),
-              double(name: 'listen'),
-              double(name: 'ffi'),
-              double(name: 'js'),
-              double(name: 'ruby_wasm')
-            ]
-          ),
-          requested_dependencies: []
-        )
-      )
-
-      setup_instance.send(:configure_excluded_gems)
-
-      expect(RubyWasm::Packager::EXCLUDED_GEMS).to include('rack', 'puma', 'nio4r', 'listen', 'ffi')
-      expect(RubyWasm::Packager::EXCLUDED_GEMS).not_to include('js', 'ruby_wasm')
-    end
-
-    it 'always excludes nio4r, puma, rack, listen, and ffi even if not in dependencies' do
-      allow(Bundler).to receive(:definition).and_return(
-        double(
-          resolve: double(
-            materialize: [
-              double(name: 'js'),
-              double(name: 'ruby_wasm')
-            ]
-          ),
-          requested_dependencies: []
-        )
-      )
-
-      setup_instance.send(:configure_excluded_gems)
-
-      # Always excluded gems should be in the list even if not in dependencies
-      expect(RubyWasm::Packager::EXCLUDED_GEMS).to include('nio4r', 'puma', 'rack', 'listen', 'ffi')
-      expect(RubyWasm::Packager::EXCLUDED_GEMS).not_to include('js', 'ruby_wasm')
-    end
-
-    it 'excludes development/test gems' do
-      allow(Bundler).to receive(:definition).and_return(
-        double(
-          resolve: double(
-            materialize: [
-              double(name: 'rspec'),
-              double(name: 'rubocop'),
-              double(name: 'rake'),
-              double(name: 'js')
-            ]
-          ),
-          requested_dependencies: []
-        )
-      )
-
-      setup_instance.send(:configure_excluded_gems)
-
-      expect(RubyWasm::Packager::EXCLUDED_GEMS).to include('rspec', 'rubocop', 'rake')
-      expect(RubyWasm::Packager::EXCLUDED_GEMS).not_to include('js')
     end
   end
 
@@ -212,13 +125,23 @@ RSpec.describe RubyWasmUi::Cli::Command::Setup do
     end
 
     context 'when src directory does not exist' do
+      before do
+        # Ensure the directory doesn't exist before the test
+        FileUtils.rm_rf('src') if Dir.exist?('src')
+      end
+
+      after do
+        # Clean up after test
+        FileUtils.rm_rf('src') if Dir.exist?('src')
+      end
+
       it 'creates src directory and initial files' do
         expect(Dir).to receive(:exist?).with('src').and_return(false)
         expect(File).to receive(:exist?).with('src/index.html').and_return(false)
         expect(File).to receive(:exist?).with('src/index.rb').and_return(false)
-        expect(Dir).to receive(:mkdir).with('src')
-        expect(File).to receive(:write).with('src/index.html', anything)
-        expect(File).to receive(:write).with('src/index.rb', anything)
+        expect(Dir).to receive(:mkdir).with('src').and_call_original
+        expect(File).to receive(:write).with('src/index.html', anything).and_call_original
+        expect(File).to receive(:write).with('src/index.rb', anything).and_call_original
 
         setup_instance.send(:create_initial_files)
       end

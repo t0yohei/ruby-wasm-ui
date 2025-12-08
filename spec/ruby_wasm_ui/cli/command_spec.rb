@@ -43,6 +43,25 @@ RSpec.describe RubyWasmUi::Cli::Command do
             described_class.run(['dev', 'arg1', 'arg2'])
           end
         end
+
+        context 'rebuild command' do
+          let(:rebuild_instance) { instance_double(RubyWasmUi::Cli::Command::Rebuild) }
+
+          before do
+            allow(RubyWasmUi::Cli::Command::Rebuild).to receive(:new).and_return(rebuild_instance)
+            allow(rebuild_instance).to receive(:run)
+          end
+
+          it 'executes the rebuild command' do
+            expect(rebuild_instance).to receive(:run).with([])
+            described_class.run(['rebuild'])
+          end
+
+          it 'passes remaining arguments to the command' do
+            expect(rebuild_instance).to receive(:run).with(['arg1', 'arg2'])
+            described_class.run(['rebuild', 'arg1', 'arg2'])
+          end
+        end
       end
 
       context 'with invalid command' do
@@ -77,6 +96,9 @@ RSpec.describe RubyWasmUi::Cli::Command do
       expect { described_class.show_usage }.to output(
         /dev.*Start development server with file watching and auto-build/
       ).to_stdout
+      expect { described_class.show_usage }.to output(
+        /rebuild.*Rebuild Ruby WASM file/
+      ).to_stdout
     end
   end
 
@@ -87,6 +109,10 @@ RSpec.describe RubyWasmUi::Cli::Command do
 
     it 'contains dev command' do
       expect(described_class::COMMANDS).to include('dev' => RubyWasmUi::Cli::Command::Dev)
+    end
+
+    it 'contains rebuild command' do
+      expect(described_class::COMMANDS).to include('rebuild' => RubyWasmUi::Cli::Command::Rebuild)
     end
   end
 end

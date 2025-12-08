@@ -1,6 +1,9 @@
 # frozen_string_literal: true
 
 require "open3"
+require "bundler/setup"
+require "ruby_wasm"
+require "ruby_wasm/cli"
 
 module RubyWasmUi
   module Cli
@@ -116,6 +119,54 @@ module RubyWasmUi
 
         def log_debug(message)
           puts "[DEBUG] #{message}"
+        end
+
+        def check_ruby_version
+          ruby_version = RUBY_VERSION.split('.').map(&:to_i)
+          major, minor = ruby_version[0], ruby_version[1]
+
+          if major < 3 || (major == 3 && minor < 2)
+            log_error("Ruby WASM requires Ruby 3.2 or higher. Current version: #{RUBY_VERSION}")
+            exit 1
+          end
+
+          "#{major}.#{minor}"
+        end
+
+        def configure_excluded_gems
+          # Get all gems from Bundler definition including all dependencies
+          definition = Bundler.definition
+          resolved = definition.resolve
+
+          # Get all resolved specs (including transitive dependencies)
+          all_specs = resolved.materialize(definition.requested_dependencies)
+          gem_names = all_specs.map(&:name).uniq
+
+          # Always exclude gems that cause WASM build errors
+          # These gems have native extensions that don't work in WASM environment
+          always_excluded = %w[nio4r puma rack listen ffi]
+
+          # Exclude gems that cause build errors or are unnecessary for WASM
+          # Keep essential gems like 'js' for WASM
+          excluded_gems = gem_names.select do |gem_name|
+            # Exclude gems that cause WASM build errors
+            always_excluded.include?(gem_name) ||
+              # Exclude development/test gems
+              gem_name.start_with?("rspec", "rubocop", "rake")
+          end
+
+          # Always add always_excluded gems to ensure they're excluded even if not in dependencies
+          excluded_gems.concat(always_excluded)
+          excluded_gems.uniq!
+
+          # Add to EXCLUDED_GEMS
+          RubyWasm::Packager::EXCLUDED_GEMS.concat(excluded_gems)
+        end
+
+        def build_ruby_wasm(ruby_version_str)
+          command = ["build", "--ruby-version", ruby_version_str, "-o", "ruby.wasm"]
+          cli = RubyWasm::CLI.new(stdout: $stdout, stderr: $stderr)
+          cli.run(command)
         end
       end
     end
