@@ -1,0 +1,174 @@
+# frozen_string_literal: true
+
+require 'spec_helper'
+require 'fileutils'
+require 'tmpdir'
+
+RSpec.describe RubyWasmUi::Cli::Command::Pack do
+  let(:pack_instance) { described_class.new }
+  let(:temp_dir) { Dir.mktmpdir }
+  let(:original_dir) { Dir.pwd }
+
+  around do |example|
+    Dir.chdir(temp_dir) do
+      example.run
+    end
+  ensure
+    Dir.chdir(original_dir)
+    FileUtils.rm_rf(temp_dir) if Dir.exist?(temp_dir)
+  end
+
+  describe '.description' do
+    it 'returns the description' do
+      expect(described_class.description).to eq('Pack WASM file by packing Ruby source files')
+    end
+  end
+
+  describe '#run' do
+    context 'when src directory does not exist' do
+      it 'outputs error message and exits' do
+        expect { pack_instance.run([]) }.to output(
+          /src directory not found. Please run 'ruby-wasm-ui setup' first./
+        ).to_stdout.and raise_error(SystemExit)
+      end
+
+      it 'exits with status 1' do
+        expect { pack_instance.run([]) }.to raise_error(SystemExit) do |error|
+          expect(error.status).to eq(1)
+        end
+      end
+    end
+
+    context 'when src directory exists but ruby.wasm does not exist' do
+      before do
+        FileUtils.mkdir_p('src')
+      end
+
+      it 'outputs error message and exits' do
+        expect { pack_instance.run([]) }.to output(
+          /ruby.wasm not found. Please run 'ruby-wasm-ui setup' first./
+        ).to_stdout.and raise_error(SystemExit)
+      end
+
+      it 'exits with status 1' do
+        expect { pack_instance.run([]) }.to raise_error(SystemExit) do |error|
+          expect(error.status).to eq(1)
+        end
+      end
+    end
+
+    context 'when src directory and ruby.wasm exist' do
+      before do
+        FileUtils.mkdir_p('src')
+        FileUtils.touch('ruby.wasm')
+        allow(pack_instance).to receive(:pack)
+      end
+
+      it 'outputs packing message' do
+        expect { pack_instance.run([]) }.to output(
+          /Packing WASM file/
+        ).to_stdout
+      end
+
+      it 'calls pack method' do
+        expect(pack_instance).to receive(:pack)
+        pack_instance.run([])
+      end
+    end
+  end
+
+  describe '#pack' do
+    before do
+      FileUtils.mkdir_p('src')
+      FileUtils.touch('ruby.wasm')
+    end
+
+    context 'when command succeeds' do
+      let(:stdin) { double(close: nil) }
+      let(:stdout) { double(each_line: ['output'].to_enum) }
+      let(:stderr) { double(each_line: [].to_enum) }
+      let(:wait_thr) { double(value: double(success?: true)) }
+      let(:stdout_thread) { instance_double(Thread, join: nil) }
+      let(:stderr_thread) { instance_double(Thread, join: nil) }
+
+      before do
+        allow(Open3).to receive(:popen3).and_yield(stdin, stdout, stderr, wait_thr)
+        allow(Thread).to receive(:new).and_return(stdout_thread, stderr_thread)
+      end
+
+      it 'executes rbwasm pack command' do
+        expect(Open3).to receive(:popen3).with(
+          'bundle exec rbwasm pack ruby.wasm --dir ./src::./src -o src.wasm'
+        )
+        pack_instance.send(:pack)
+      end
+
+      it 'outputs pack message' do
+        expect { pack_instance.send(:pack) }.to output(
+          /Packing: bundle exec rbwasm pack/
+        ).to_stdout
+      end
+
+      it 'outputs success message' do
+        expect { pack_instance.send(:pack) }.to output(
+          /Pack completed/
+        ).to_stdout
+      end
+
+      it 'closes stdin' do
+        expect(stdin).to receive(:close)
+        pack_instance.send(:pack)
+      end
+
+      it 'reads stdout in a thread' do
+        expect(Thread).to receive(:new).and_yield.and_return(stdout_thread)
+        allow(stdout_thread).to receive(:join)
+        allow(Thread).to receive(:new).and_call_original.once
+        allow(Thread).to receive(:new).and_return(stderr_thread).once
+
+        pack_instance.send(:pack)
+      end
+
+      it 'reads stderr in a thread' do
+        allow(Thread).to receive(:new).and_return(stdout_thread).once
+        expect(Thread).to receive(:new).and_yield.and_return(stderr_thread)
+        allow(stderr_thread).to receive(:join)
+        allow(Thread).to receive(:new).and_call_original.once
+
+        pack_instance.send(:pack)
+      end
+
+      it 'waits for threads to complete' do
+        expect(stdout_thread).to receive(:join)
+        expect(stderr_thread).to receive(:join)
+        pack_instance.send(:pack)
+      end
+    end
+
+    context 'when command fails' do
+      let(:stdin) { double(close: nil) }
+      let(:stdout) { double(each_line: [].to_enum) }
+      let(:stderr) { double(each_line: ['error'].to_enum) }
+      let(:wait_thr) { double(value: double(success?: false, exitstatus: 1)) }
+      let(:stdout_thread) { instance_double(Thread, join: nil) }
+      let(:stderr_thread) { instance_double(Thread, join: nil) }
+
+      before do
+        allow(Open3).to receive(:popen3).and_yield(stdin, stdout, stderr, wait_thr)
+        allow(Thread).to receive(:new).and_return(stdout_thread, stderr_thread)
+      end
+
+      it 'outputs error message' do
+        expect { pack_instance.send(:pack) }.to output(
+          /Pack failed/
+        ).to_stdout.and raise_error(SystemExit)
+      end
+
+      it 'exits with status 1' do
+        expect { pack_instance.send(:pack) }.to raise_error(SystemExit) do |error|
+          expect(error.status).to eq(1)
+        end
+      end
+    end
+  end
+end
