@@ -24,10 +24,8 @@ jobs:
 
       - name: Install dependencies
         run: |
-          cd packages/npm-packages/runtime
           bundle install
 
       - name: Run RSpec
         run: |
-          cd packages/npm-packages/runtime
           bundle exec rspec
