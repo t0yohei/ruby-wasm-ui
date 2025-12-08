@@ -1,0 +1,64 @@
+# frozen_string_literal: true
+
+require 'spec_helper'
+
+RSpec.describe RubyWasmUi::Cli::Command do
+  describe '.run' do
+    context 'when command is provided' do
+      context 'with valid command' do
+        let(:setup_instance) { instance_double(RubyWasmUi::Cli::Command::Setup) }
+
+        before do
+          allow(RubyWasmUi::Cli::Command::Setup).to receive(:new).and_return(setup_instance)
+          allow(setup_instance).to receive(:run)
+        end
+
+        it 'executes the setup command' do
+          expect(setup_instance).to receive(:run).with([])
+          described_class.run(['setup'])
+        end
+
+        it 'passes remaining arguments to the command' do
+          expect(setup_instance).to receive(:run).with(['arg1', 'arg2'])
+          described_class.run(['setup', 'arg1', 'arg2'])
+        end
+      end
+
+      context 'with invalid command' do
+        it 'prints error message and shows usage' do
+          expect { described_class.run(['unknown']) }.to output(
+            /Unknown command: unknown/
+          ).to_stdout.and raise_error(SystemExit)
+        end
+      end
+    end
+
+    context 'when no command is provided' do
+      it 'shows usage and exits' do
+        expect { described_class.run([]) }.to output(
+          /Usage: ruby-wasm-ui <command>/
+        ).to_stdout.and raise_error(SystemExit)
+      end
+    end
+  end
+
+  describe '.show_usage' do
+    it 'displays usage information' do
+      expect { described_class.show_usage }.to output(
+        /Usage: ruby-wasm-ui <command>/
+      ).to_stdout
+    end
+
+    it 'lists available commands' do
+      expect { described_class.show_usage }.to output(
+        /setup.*Set up the project for ruby-wasm-ui/
+      ).to_stdout
+    end
+  end
+
+  describe 'COMMANDS' do
+    it 'contains setup command' do
+      expect(described_class::COMMANDS).to include('setup' => RubyWasmUi::Cli::Command::Setup)
+    end
+  end
+end
