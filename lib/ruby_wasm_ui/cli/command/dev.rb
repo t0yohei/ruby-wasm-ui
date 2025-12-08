@@ -4,6 +4,7 @@ require_relative "base"
 require "listen"
 require "rack"
 require "thread"
+require "rbconfig"
 
 module RubyWasmUi
   module Cli
@@ -54,6 +55,22 @@ module RubyWasmUi
         end
 
         private
+
+        def open_browser(url)
+          case RbConfig::CONFIG["host_os"]
+          when /darwin/
+            system("open", url)
+          when /linux/
+            system("xdg-open", url)
+          when /mswin|mingw|cygwin/
+            system("start", url)
+          else
+            log_info("Please open #{url} in your browser")
+          end
+        rescue => e
+          log_info("Could not open browser automatically: #{e.message}")
+          log_info("Please open #{url} in your browser")
+        end
 
         def cleanup
           return if @cleanup_done
@@ -142,7 +159,11 @@ module RubyWasmUi
           # Static file server application
           static_app = lambda do |env|
             path = env["PATH_INFO"]
-            file_path = File.join(Dir.pwd, path == "/" ? "index.html" : path)
+            if path == "/"
+              file_path = File.join(Dir.pwd, "src", "index.html")
+            else
+              file_path = File.join(Dir.pwd, path)
+            end
 
             if File.exist?(file_path) && File.file?(file_path)
               content_type = Rack::Mime.mime_type(File.extname(file_path), "text/html")
@@ -189,6 +210,13 @@ module RubyWasmUi
           begin
             require "rack/handler/puma"
             log_info("Using handler: puma")
+
+            # Open browser after a short delay to ensure server is ready
+            Thread.new do
+              sleep 1
+              open_browser("http://localhost:#{port}/src/index.html")
+            end
+
             Rack::Handler::Puma.run(app, Port: port, Host: "0.0.0.0")
           rescue LoadError => e
             log_error("Puma handler not available: #{e.message}")

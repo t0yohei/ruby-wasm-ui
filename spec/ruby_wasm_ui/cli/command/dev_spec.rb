@@ -292,6 +292,27 @@ RSpec.describe RubyWasmUi::Cli::Command::Dev do
       ).to_stdout
     end
 
+    it 'opens browser after server starts' do
+      allow(Rack::Handler::Puma).to receive(:run)
+      browser_thread_called = false
+      
+      allow(Thread).to receive(:new) do |&block|
+        if block
+          browser_thread_called = true
+          # Execute block immediately for testing (without sleep)
+          allow(Kernel).to receive(:sleep)
+          block.call
+        end
+        instance_double(Thread)
+      end
+      
+      expect(dev_instance).to receive(:open_browser).with('http://localhost:8080/src/index.html')
+      
+      dev_instance.send(:start_server)
+      
+      expect(browser_thread_called).to be true
+    end
+
     context 'when Puma handler is not available' do
       before do
         allow(Kernel).to receive(:require).with('rack/handler/puma').and_raise(LoadError.new('cannot load such file'))
@@ -319,6 +340,69 @@ RSpec.describe RubyWasmUi::Cli::Command::Dev do
         expect { dev_instance.send(:start_server) }.to output(
           /Server error: Server error/
         ).to_stdout.and raise_error(SystemExit)
+      end
+    end
+  end
+
+  describe '#open_browser' do
+    before do
+      FileUtils.mkdir_p('src')
+    end
+
+    context 'on macOS' do
+      before do
+        allow(RbConfig::CONFIG).to receive(:[]).with('host_os').and_return('darwin')
+      end
+
+      it 'calls open command' do
+        expect(dev_instance).to receive(:system).with('open', 'http://localhost:8080/src/index.html')
+        dev_instance.send(:open_browser, 'http://localhost:8080/src/index.html')
+      end
+
+      context 'when system call fails' do
+        before do
+          allow(dev_instance).to receive(:system).and_raise(StandardError.new('Command failed'))
+        end
+
+        it 'outputs fallback message' do
+          expect { dev_instance.send(:open_browser, 'http://localhost:8080/src/index.html') }.to output(
+            /Please open http:\/\/localhost:8080\/src\/index.html in your browser/
+          ).to_stdout
+        end
+      end
+    end
+
+    context 'on Linux' do
+      before do
+        allow(RbConfig::CONFIG).to receive(:[]).with('host_os').and_return('linux')
+      end
+
+      it 'calls xdg-open command' do
+        expect(dev_instance).to receive(:system).with('xdg-open', 'http://localhost:8080/src/index.html')
+        dev_instance.send(:open_browser, 'http://localhost:8080/src/index.html')
+      end
+    end
+
+    context 'on Windows' do
+      before do
+        allow(RbConfig::CONFIG).to receive(:[]).with('host_os').and_return('mswin')
+      end
+
+      it 'calls start command' do
+        expect(dev_instance).to receive(:system).with('start', 'http://localhost:8080/src/index.html')
+        dev_instance.send(:open_browser, 'http://localhost:8080/src/index.html')
+      end
+    end
+
+    context 'on unknown OS' do
+      before do
+        allow(RbConfig::CONFIG).to receive(:[]).with('host_os').and_return('unknown')
+      end
+
+      it 'outputs manual instruction' do
+        expect { dev_instance.send(:open_browser, 'http://localhost:8080/src/index.html') }.to output(
+          /Please open http:\/\/localhost:8080\/src\/index.html in your browser/
+        ).to_stdout
       end
     end
   end
