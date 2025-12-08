@@ -9,6 +9,7 @@ GEM
   remote: https://rubygems.org/
   specs:
     date (3.5.0)
+    diff-lcs (1.6.2)
     erb (6.0.0)
     io-console (0.8.1)
     irb (1.15.3)
@@ -30,6 +31,19 @@ GEM
       tsort
     reline (0.6.3)
       io-console (~> 0.5)
+    rspec (3.13.2)
+      rspec-core (~> 3.13.0)
+      rspec-expectations (~> 3.13.0)
+      rspec-mocks (~> 3.13.0)
+    rspec-core (3.13.6)
+      rspec-support (~> 3.13.0)
+    rspec-expectations (3.13.5)
+      diff-lcs (>= 1.2.0, < 2.0)
+      rspec-support (~> 3.13.0)
+    rspec-mocks (3.13.7)
+      diff-lcs (>= 1.2.0, < 2.0)
+      rspec-support (~> 3.13.0)
+    rspec-support (3.13.6)
     ruby_wasm (2.7.2)
       logger
     ruby_wasm (2.7.2-aarch64-linux)
@@ -59,6 +73,7 @@ PLATFORMS
 DEPENDENCIES
   irb
   rake (~> 13.0)
+  rspec
   ruby_wasm_ui!
 
 BUNDLED WITH

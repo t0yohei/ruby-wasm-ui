@@ -1,7 +1,7 @@
 # frozen_string_literal: true
 
 require 'bundler/setup'
-Dir[File.expand_path('../../src/**/*.rb', __FILE__)].sort.each { |f| require f }
+Dir[File.expand_path('../../lib/**/*.rb', __FILE__)].sort.each { |f| require f }
 
 RSpec.configure do |config|
   config.expect_with :rspec do |expectations|
