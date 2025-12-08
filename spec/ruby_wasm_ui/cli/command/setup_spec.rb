@@ -16,6 +16,7 @@ RSpec.describe RubyWasmUi::Cli::Command::Setup do
       allow(setup_instance).to receive(:configure_excluded_gems)
       allow(setup_instance).to receive(:build_ruby_wasm)
       allow(setup_instance).to receive(:update_gitignore)
+      allow(setup_instance).to receive(:create_initial_files)
     end
 
     it 'outputs setup message' do
@@ -58,6 +59,14 @@ RSpec.describe RubyWasmUi::Cli::Command::Setup do
       expect { setup_instance.run([]) }.to output(
         /Updating .gitignore/
       ).to_stdout
+      expect { setup_instance.run([]) }.to output(
+        /Creating initial files/
+      ).to_stdout
+    end
+
+    it 'creates initial files' do
+      expect(setup_instance).to receive(:create_initial_files)
+      setup_instance.run([])
     end
 
     context 'when Ruby version is less than 3.2' do
@@ -104,6 +113,7 @@ RSpec.describe RubyWasmUi::Cli::Command::Setup do
         allow(setup_instance).to receive(:configure_excluded_gems)
         allow(setup_instance).to receive(:build_ruby_wasm)
         allow(setup_instance).to receive(:update_gitignore)
+        allow(setup_instance).to receive(:create_initial_files)
       end
 
       it 'executes rbwasm build command with correct version' do
@@ -182,6 +192,72 @@ RSpec.describe RubyWasmUi::Cli::Command::Setup do
 
       expect(RubyWasm::Packager::EXCLUDED_GEMS).to include('rspec', 'rubocop', 'rake')
       expect(RubyWasm::Packager::EXCLUDED_GEMS).not_to include('js')
+    end
+  end
+
+  describe '#create_initial_files' do
+    let(:temp_dir) { Dir.mktmpdir }
+    let(:src_dir) { File.join(temp_dir, 'src') }
+
+    before do
+      allow(Dir).to receive(:pwd).and_return(temp_dir)
+      allow(Dir).to receive(:exist?).and_call_original
+      allow(File).to receive(:exist?).and_call_original
+      allow(File).to receive(:write).and_call_original
+      allow(Dir).to receive(:mkdir).and_call_original
+    end
+
+    after do
+      FileUtils.rm_rf(temp_dir) if Dir.exist?(temp_dir)
+    end
+
+    context 'when src directory does not exist' do
+      it 'creates src directory and initial files' do
+        expect(Dir).to receive(:exist?).with('src').and_return(false)
+        expect(File).to receive(:exist?).with('src/index.html').and_return(false)
+        expect(File).to receive(:exist?).with('src/index.rb').and_return(false)
+        expect(Dir).to receive(:mkdir).with('src')
+        expect(File).to receive(:write).with('src/index.html', anything)
+        expect(File).to receive(:write).with('src/index.rb', anything)
+
+        setup_instance.send(:create_initial_files)
+      end
+    end
+
+    context 'when src directory already exists' do
+      it 'skips file creation' do
+        expect(Dir).to receive(:exist?).with('src').and_return(true)
+        expect(File).not_to receive(:write)
+
+        expect { setup_instance.send(:create_initial_files) }.to output(
+          /src directory already exists, skipping initial file creation/
+        ).to_stdout
+      end
+    end
+
+    context 'when src/index.html already exists' do
+      it 'skips file creation' do
+        expect(Dir).to receive(:exist?).with('src').and_return(false)
+        expect(File).to receive(:exist?).with('src/index.html').and_return(true)
+        expect(File).not_to receive(:write)
+
+        expect { setup_instance.send(:create_initial_files) }.to output(
+          /src\/index.html already exists, skipping initial file creation/
+        ).to_stdout
+      end
+    end
+
+    context 'when src/index.rb already exists' do
+      it 'skips file creation' do
+        expect(Dir).to receive(:exist?).with('src').and_return(false)
+        expect(File).to receive(:exist?).with('src/index.html').and_return(false)
+        expect(File).to receive(:exist?).with('src/index.rb').and_return(true)
+        expect(File).not_to receive(:write)
+
+        expect { setup_instance.send(:create_initial_files) }.to output(
+          /src\/index.rb already exists, skipping initial file creation/
+        ).to_stdout
+      end
     end
   end
 end

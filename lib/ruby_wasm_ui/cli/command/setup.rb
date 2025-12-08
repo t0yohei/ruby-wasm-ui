@@ -42,8 +42,14 @@ module RubyWasmUi
 
           # Update .gitignore
           puts ""
-          log_info("Step 3/3: Updating .gitignore...")
+          log_info("Step 3/4: Updating .gitignore...")
           update_gitignore(["*.wasm", "/rubies", "/build"])
+          log_success("✓ .gitignore updated")
+
+          # Create initial files
+          puts ""
+          log_info("Step 4/4: Creating initial files...")
+          create_initial_files
 
           puts ""
           log_success("Setup completed successfully!")
@@ -85,6 +91,85 @@ module RubyWasmUi
           command = ["build", "--ruby-version", ruby_version_str, "-o", "ruby.wasm"]
           cli = RubyWasm::CLI.new(stdout: $stdout, stderr: $stderr)
           cli.run(command)
+        end
+
+        def create_initial_files
+          # Skip if src directory exists
+          if Dir.exist?("src")
+            log_info("src directory already exists, skipping initial file creation")
+            return
+          end
+
+          # Skip if files already exist
+          if File.exist?("src/index.html")
+            log_info("src/index.html already exists, skipping initial file creation")
+            return
+          end
+
+          if File.exist?("src/index.rb")
+            log_info("src/index.rb already exists, skipping initial file creation")
+            return
+          end
+
+          # Create src directory
+          Dir.mkdir("src")
+
+          # Create index.html
+          File.write("src/index.html", <<~HTML)
+            <!DOCTYPE html>
+            <html lang="en">
+              <head>
+                <meta charset="UTF-8" />
+                <title>My App</title>
+                <script type="module">
+                  import { DefaultRubyVM } from "https://cdn.jsdelivr.net/npm/@ruby/wasm-wasi@2.7.2/dist/browser/+esm";
+                  const response = await fetch("../src.wasm");
+                  const module = await WebAssembly.compileStreaming(response);
+                  const { vm } = await DefaultRubyVM(module);
+                  vm.evalAsync(`
+                    require "ruby_wasm_ui"
+                    require_relative './src/index.rb'
+                  `);
+                </script>
+              </head>
+              <body>
+                <h1>My App</h1>
+                <div id="app"></div>
+              </body>
+            </html>
+          HTML
+
+          # Create index.rb
+          File.write("src/index.rb", <<~RUBY)
+            # Simple Hello World component
+            HelloComponent = RubyWasmUi.define_component(
+              state: ->(props) {
+                { message: props[:message] || "Hello, Ruby WASM UI!" }
+              },
+              template: ->() {
+                RubyWasmUi::Template::Parser.parse_and_eval(<<~HTML, binding)
+                  <div>
+                    <h2>{state[:message]}</h2>
+                    <button on="{ click: -> { update_message } }">
+                      Click me!
+                    </button>
+                  </div>
+                HTML
+              },
+              methods: {
+                update_message: ->() {
+                  update_state(message: "You clicked the button!")
+                }
+              }
+            )
+
+            # Create and mount the app
+            app = RubyWasmUi::App.create(HelloComponent, message: "Hello, Ruby WASM UI!")
+            app_element = JS.global[:document].getElementById("app")
+            app.mount(app_element)
+          RUBY
+
+          log_success("✓ Initial files created: src/index.html, src/index.rb")
         end
       end
     end
