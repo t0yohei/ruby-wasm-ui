@@ -16,12 +16,12 @@ module RubyWasmUi
 
         protected
 
-        def run_command(command)
+        def run_command(command, exit_on_error: true)
           log_debug("Executing command: #{command}")
-          
+
           Open3.popen3(command) do |stdin, stdout, stderr, wait_thr|
             stdin.close
-            
+
             # Read stdout and stderr in separate threads for real-time output
             stdout_thread = Thread.new do
               stdout.each_line do |line|
@@ -29,25 +29,45 @@ module RubyWasmUi
                 $stdout.flush
               end
             end
-            
+
             stderr_thread = Thread.new do
               stderr.each_line do |line|
                 $stderr.print line
                 $stderr.flush
               end
             end
-            
+
             # Wait for both threads to finish reading
             stdout_thread.join
             stderr_thread.join
-            
+
             # Wait for the process to finish
             exit_status = wait_thr.value
-            
+
             unless exit_status.success?
               log_error("Command failed: #{command}")
-              exit exit_status.exitstatus
+              if exit_on_error
+                exit exit_status.exitstatus
+              else
+                return false
+              end
             end
+
+            true
+          end
+        end
+
+        def ensure_src_directory
+          unless Dir.exist?("src")
+            log_error("src directory not found. Please run 'ruby-wasm-ui setup' first.")
+            exit 1
+          end
+        end
+
+        def ensure_ruby_wasm
+          unless File.exist?("ruby.wasm")
+            log_error("ruby.wasm not found. Please run 'ruby-wasm-ui setup' first.")
+            exit 1
           end
         end
 

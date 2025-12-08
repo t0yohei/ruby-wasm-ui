@@ -113,21 +113,14 @@ RSpec.describe RubyWasmUi::Cli::Command::Dev do
     end
 
     context 'when command succeeds' do
-      let(:stdin) { double(close: nil) }
-      let(:stdout) { double(each_line: ['output'].to_enum) }
-      let(:stderr) { double(each_line: [].to_enum) }
-      let(:wait_thr) { double(value: double(success?: true)) }
-      let(:stdout_thread) { instance_double(Thread, join: nil) }
-      let(:stderr_thread) { instance_double(Thread, join: nil) }
-
       before do
-        allow(Open3).to receive(:popen3).and_yield(stdin, stdout, stderr, wait_thr)
-        allow(Thread).to receive(:new).and_return(stdout_thread, stderr_thread)
+        allow(dev_instance).to receive(:run_command).and_return(true)
       end
 
-      it 'executes rbwasm pack command' do
-        expect(Open3).to receive(:popen3).with(
-          'bundle exec rbwasm pack ruby.wasm --dir ./src::./src -o src.wasm'
+      it 'executes rbwasm pack command via run_command' do
+        expect(dev_instance).to receive(:run_command).with(
+          'bundle exec rbwasm pack ruby.wasm --dir ./src::./src -o src.wasm',
+          exit_on_error: false
         )
         dev_instance.send(:build)
       end
@@ -151,16 +144,8 @@ RSpec.describe RubyWasmUi::Cli::Command::Dev do
     end
 
     context 'when command fails' do
-      let(:stdin) { double(close: nil) }
-      let(:stdout) { double(each_line: [].to_enum) }
-      let(:stderr) { double(each_line: ['error'].to_enum) }
-      let(:wait_thr) { double(value: double(success?: false, exitstatus: 1)) }
-      let(:stdout_thread) { instance_double(Thread, join: nil) }
-      let(:stderr_thread) { instance_double(Thread, join: nil) }
-
       before do
-        allow(Open3).to receive(:popen3).and_yield(stdin, stdout, stderr, wait_thr)
-        allow(Thread).to receive(:new).and_return(stdout_thread, stderr_thread)
+        allow(dev_instance).to receive(:run_command).and_return(false)
       end
 
       it 'outputs error message' do

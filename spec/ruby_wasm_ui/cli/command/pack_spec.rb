@@ -84,20 +84,12 @@ RSpec.describe RubyWasmUi::Cli::Command::Pack do
     end
 
     context 'when command succeeds' do
-      let(:stdin) { double(close: nil) }
-      let(:stdout) { double(each_line: ['output'].to_enum) }
-      let(:stderr) { double(each_line: [].to_enum) }
-      let(:wait_thr) { double(value: double(success?: true)) }
-      let(:stdout_thread) { instance_double(Thread, join: nil) }
-      let(:stderr_thread) { instance_double(Thread, join: nil) }
-
       before do
-        allow(Open3).to receive(:popen3).and_yield(stdin, stdout, stderr, wait_thr)
-        allow(Thread).to receive(:new).and_return(stdout_thread, stderr_thread)
+        allow(pack_instance).to receive(:run_command).and_return(true)
       end
 
-      it 'executes rbwasm pack command' do
-        expect(Open3).to receive(:popen3).with(
+      it 'executes rbwasm pack command via run_command' do
+        expect(pack_instance).to receive(:run_command).with(
           'bundle exec rbwasm pack ruby.wasm --dir ./src::./src -o src.wasm'
         )
         pack_instance.send(:pack)
@@ -114,54 +106,15 @@ RSpec.describe RubyWasmUi::Cli::Command::Pack do
           /Pack completed/
         ).to_stdout
       end
-
-      it 'closes stdin' do
-        expect(stdin).to receive(:close)
-        pack_instance.send(:pack)
-      end
-
-      it 'reads stdout in a thread' do
-        expect(Thread).to receive(:new).and_yield.and_return(stdout_thread)
-        allow(stdout_thread).to receive(:join)
-        allow(Thread).to receive(:new).and_call_original.once
-        allow(Thread).to receive(:new).and_return(stderr_thread).once
-
-        pack_instance.send(:pack)
-      end
-
-      it 'reads stderr in a thread' do
-        allow(Thread).to receive(:new).and_return(stdout_thread).once
-        expect(Thread).to receive(:new).and_yield.and_return(stderr_thread)
-        allow(stderr_thread).to receive(:join)
-        allow(Thread).to receive(:new).and_call_original.once
-
-        pack_instance.send(:pack)
-      end
-
-      it 'waits for threads to complete' do
-        expect(stdout_thread).to receive(:join)
-        expect(stderr_thread).to receive(:join)
-        pack_instance.send(:pack)
-      end
     end
 
     context 'when command fails' do
-      let(:stdin) { double(close: nil) }
-      let(:stdout) { double(each_line: [].to_enum) }
-      let(:stderr) { double(each_line: ['error'].to_enum) }
-      let(:wait_thr) { double(value: double(success?: false, exitstatus: 1)) }
-      let(:stdout_thread) { instance_double(Thread, join: nil) }
-      let(:stderr_thread) { instance_double(Thread, join: nil) }
-
       before do
-        allow(Open3).to receive(:popen3).and_yield(stdin, stdout, stderr, wait_thr)
-        allow(Thread).to receive(:new).and_return(stdout_thread, stderr_thread)
+        allow(pack_instance).to receive(:run_command).and_raise(SystemExit.new(1))
       end
 
-      it 'outputs error message' do
-        expect { pack_instance.send(:pack) }.to output(
-          /Pack failed/
-        ).to_stdout.and raise_error(SystemExit)
+      it 'outputs error message and exits' do
+        expect { pack_instance.send(:pack) }.to raise_error(SystemExit)
       end
 
       it 'exits with status 1' do

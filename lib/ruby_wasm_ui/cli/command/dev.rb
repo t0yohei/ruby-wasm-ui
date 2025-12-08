@@ -18,11 +18,7 @@ module RubyWasmUi
           log_info("Starting development server...")
           puts ""
 
-          # Check if src directory exists
-          unless Dir.exist?("src")
-            log_error("src directory not found. Please run 'ruby-wasm-ui setup' first.")
-            exit 1
-          end
+          ensure_src_directory
 
           # Initial build
           log_info("Performing initial build...")
@@ -83,36 +79,13 @@ module RubyWasmUi
           command = "bundle exec rbwasm pack ruby.wasm --dir ./src::./src -o src.wasm"
           log_info("Building: #{command}")
 
-          Open3.popen3(command) do |stdin, stdout, stderr, wait_thr|
-            stdin.close
-
-            stdout_thread = Thread.new do
-              stdout.each_line do |line|
-                print line
-                $stdout.flush
-              end
-            end
-
-            stderr_thread = Thread.new do
-              stderr.each_line do |line|
-                $stderr.print line
-                $stderr.flush
-              end
-            end
-
-            stdout_thread.join
-            stderr_thread.join
-
-            exit_status = wait_thr.value
-
-            unless exit_status.success?
-              log_error("Build failed")
-              return false
-            end
-
+          success = run_command(command, exit_on_error: false)
+          if success
             log_success("✓ Build completed")
-            true
+          else
+            log_error("Build failed")
           end
+          success
         end
 
         def start_file_watcher
