@@ -6,21 +6,42 @@ RSpec.describe RubyWasmUi::Cli::Command do
   describe '.run' do
     context 'when command is provided' do
       context 'with valid command' do
-        let(:setup_instance) { instance_double(RubyWasmUi::Cli::Command::Setup) }
+        context 'setup command' do
+          let(:setup_instance) { instance_double(RubyWasmUi::Cli::Command::Setup) }
 
-        before do
-          allow(RubyWasmUi::Cli::Command::Setup).to receive(:new).and_return(setup_instance)
-          allow(setup_instance).to receive(:run)
+          before do
+            allow(RubyWasmUi::Cli::Command::Setup).to receive(:new).and_return(setup_instance)
+            allow(setup_instance).to receive(:run)
+          end
+
+          it 'executes the setup command' do
+            expect(setup_instance).to receive(:run).with([])
+            described_class.run(['setup'])
+          end
+
+          it 'passes remaining arguments to the command' do
+            expect(setup_instance).to receive(:run).with(['arg1', 'arg2'])
+            described_class.run(['setup', 'arg1', 'arg2'])
+          end
         end
 
-        it 'executes the setup command' do
-          expect(setup_instance).to receive(:run).with([])
-          described_class.run(['setup'])
-        end
+        context 'dev command' do
+          let(:dev_instance) { instance_double(RubyWasmUi::Cli::Command::Dev) }
 
-        it 'passes remaining arguments to the command' do
-          expect(setup_instance).to receive(:run).with(['arg1', 'arg2'])
-          described_class.run(['setup', 'arg1', 'arg2'])
+          before do
+            allow(RubyWasmUi::Cli::Command::Dev).to receive(:new).and_return(dev_instance)
+            allow(dev_instance).to receive(:run)
+          end
+
+          it 'executes the dev command' do
+            expect(dev_instance).to receive(:run).with([])
+            described_class.run(['dev'])
+          end
+
+          it 'passes remaining arguments to the command' do
+            expect(dev_instance).to receive(:run).with(['arg1', 'arg2'])
+            described_class.run(['dev', 'arg1', 'arg2'])
+          end
         end
       end
 
@@ -53,12 +74,19 @@ RSpec.describe RubyWasmUi::Cli::Command do
       expect { described_class.show_usage }.to output(
         /setup.*Set up the project for ruby-wasm-ui/
       ).to_stdout
+      expect { described_class.show_usage }.to output(
+        /dev.*Start development server with file watching and auto-build/
+      ).to_stdout
     end
   end
 
   describe 'COMMANDS' do
     it 'contains setup command' do
       expect(described_class::COMMANDS).to include('setup' => RubyWasmUi::Cli::Command::Setup)
+    end
+
+    it 'contains dev command' do
+      expect(described_class::COMMANDS).to include('dev' => RubyWasmUi::Cli::Command::Dev)
     end
   end
 end

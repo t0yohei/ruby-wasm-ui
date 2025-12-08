@@ -1,18 +1,14 @@
 # frozen_string_literal: true
 
 require_relative "command/setup"
-# To add a new command (e.g., dev):
-# 1. Create lib/ruby_wasm_ui/cli/command/dev.rb inheriting from Command::Base
-# 2. Add require_relative "command/dev" above
-# 3. Add "dev" => Command::Dev to COMMANDS hash below
+require_relative "command/dev"
 
 module RubyWasmUi
   module Cli
     class Command
       COMMANDS = {
-        "setup" => Command::Setup
-        # Add new commands here, e.g.:
-        # "dev" => Command::Dev
+        "setup" => Command::Setup,
+        "dev" => Command::Dev
       }.freeze
 
       def self.run(argv)
