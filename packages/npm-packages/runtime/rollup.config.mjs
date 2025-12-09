@@ -18,7 +18,7 @@ const __dirname = dirname(fileURLToPath(import.meta.url));
 
 // Find all Ruby files in ruby_wasm_ui directory
 const rubyFiles = glob
-  .sync("src/ruby_wasm_ui/**/*.rb")
+  .sync("src/ruby_wasm_ui/runtime/**/*.rb")
   .map((file) => file.replace("src/", ""))
   .sort((a, b) => {
     // Files in root directory should be loaded first
