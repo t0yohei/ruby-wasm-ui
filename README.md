@@ -112,19 +112,37 @@ bundle install
 
 ### Building Your Application
 
-1. Build Ruby WASM:
+1. Set up your project (first time only):
 
 ```bash
-bundle exec rbwasm build --ruby-version 3.4 -o ruby.wasm
+bundle exec ruby-wasm-ui setup
 ```
+
+This command will:
+- Configure excluded gems for WASM build
+- Build Ruby WASM file
+- Update `.gitignore`
+- Create initial `src/index.html` and `src/index.rb` files
 
 2. Pack your application files:
 
 ```bash
-bundle exec rbwasm pack ruby.wasm --dir ./src::./src -o src.wasm
+bundle exec ruby-wasm-ui pack
 ```
 
 This command packs your Ruby files from the `./src` directory into the WASM file.
+
+**Additional Commands:**
+
+- **Development server**: Start a development server with file watching and auto-build:
+  ```bash
+  bundle exec ruby-wasm-ui dev
+  ```
+
+- **Rebuild Ruby WASM**: Rebuild the Ruby WASM file when you add new gems:
+  ```bash
+  bundle exec ruby-wasm-ui rebuild
+  ```
 
 ### Creating Your HTML File
 
