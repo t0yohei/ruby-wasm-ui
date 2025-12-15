@@ -21,7 +21,7 @@ Create an HTML file:
 <!DOCTYPE html>
 <html>
   <head>
-    <script src="https://unpkg.com/ruby-wasm-ui@0.9.0"></script>
+    <script src="https://unpkg.com/ruby-wasm-ui@0.9.1"></script>
     <script defer type="text/ruby" src="app.rb"></script>
   </head>
   <body>
@@ -124,14 +124,6 @@ This command will:
 - Update `.gitignore`
 - Create initial `src/index.html` and `src/index.rb` files
 
-2. Pack your application files:
-
-```bash
-bundle exec ruby-wasm-ui pack
-```
-
-This command packs your Ruby files from the `./src` directory into the WASM file.
-
 **Additional Commands:**
 
 - **Development server**: Start a development server with file watching and auto-build:
@@ -143,6 +135,16 @@ This command packs your Ruby files from the `./src` directory into the WASM file
   ```bash
   bundle exec ruby-wasm-ui rebuild
   ```
+
+### Deployment
+
+Pack your application files for deployment:
+
+```bash
+bundle exec ruby-wasm-ui pack
+```
+
+This command packs your Ruby files from the `./src` directory into the WASM file and outputs to the `dist` directory for deployment.
 
 ### Creating Your HTML File
 
