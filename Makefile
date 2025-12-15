@@ -30,6 +30,9 @@ bump:
 	@# Update lib/ruby_wasm_ui/version.rb
 	@sed -i '' 's/VERSION = ".*"/VERSION = "$(VERSION)"/' lib/ruby_wasm_ui/version.rb
 	@echo "✓ Updated lib/ruby_wasm_ui/version.rb"
+	@# Update Gemfile.lock
+	@bundle install
+	@echo "✓ Updated Gemfile.lock"
 	@# Update root package.json
 	@sed -i '' 's/"version": ".*"/"version": "$(VERSION)"/' package.json
 	@echo "✓ Updated package.json"
