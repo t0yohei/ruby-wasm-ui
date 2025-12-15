@@ -112,7 +112,7 @@ bundle install
 
 ### Building Your Application
 
-1. Set up your project (first time only):
+Set up your project (first time only):
 
 ```bash
 bundle exec ruby-wasm-ui setup
@@ -124,29 +124,23 @@ This command will:
 - Update `.gitignore`
 - Create initial `src/index.html` and `src/index.rb` files
 
-**Additional Commands:**
+The setup command will configure your project structure as follows:
+
+```
+my-app/
+├── Gemfile
+└── src/
+    ├── index.rb
+    └── index.html
+```
+
+
+### Develop Your Application
 
 - **Development server**: Start a development server with file watching and auto-build:
   ```bash
   bundle exec ruby-wasm-ui dev
   ```
-
-- **Rebuild Ruby WASM**: Rebuild the Ruby WASM file when you add new gems:
-  ```bash
-  bundle exec ruby-wasm-ui rebuild
-  ```
-
-### Deployment
-
-Pack your application files for deployment:
-
-```bash
-bundle exec ruby-wasm-ui pack
-```
-
-This command packs your Ruby files from the `./src` directory into the WASM file and outputs to the `dist` directory for deployment.
-
-### Creating Your HTML File
 
 Create an HTML file in the `src` directory that loads the WASM file:
 
@@ -163,7 +157,7 @@ Create an HTML file in the `src` directory that loads the WASM file:
       const { vm } = await DefaultRubyVM(module);
       vm.evalAsync(`
         require "ruby_wasm_ui"
-        require_relative './src/app.rb'
+        require_relative './src/index.rb'
       `);
     </script>
   </head>
@@ -173,18 +167,7 @@ Create an HTML file in the `src` directory that loads the WASM file:
 </html>
 ```
 
-### Example Project Structure
-
-```
-my-app/
-├── Gemfile
-├── src.wasm
-└── src/
-    ├── app.rb
-    └── index.html
-```
-
-Your `src/app.rb` file can use `ruby_wasm_ui` just like in the Quick Start example:
+Your `src/index.rb` file can use `ruby_wasm_ui` just like in the Quick Start example:
 
 ```ruby
 CounterComponent = RubyWasmUi.define_component(
@@ -212,6 +195,24 @@ app.mount(app_element)
 ```
 
 See the [examples](examples) directory for a complete working example.
+
+
+**Additional Commands:**
+
+- **Rebuild Ruby WASM**: Rebuild the Ruby WASM file when you add new gems:
+  ```bash
+  bundle exec ruby-wasm-ui rebuild
+  ```
+
+### Deployment
+
+Pack your application files for deployment:
+
+```bash
+bundle exec ruby-wasm-ui pack
+```
+
+This command packs your Ruby files from the `./src` directory into the WASM file and outputs to the `dist` directory for deployment.
 
 ## Documentation
 
