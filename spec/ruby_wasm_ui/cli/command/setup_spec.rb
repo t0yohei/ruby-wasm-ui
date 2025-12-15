@@ -45,7 +45,7 @@ RSpec.describe RubyWasmUi::Cli::Command::Setup do
 
     it 'updates .gitignore with required entries' do
       expect(setup_instance).to receive(:update_gitignore).with(
-        ['*.wasm', '/rubies', '/build']
+        ['ruby.wasm', '/rubies', '/build', '/dist']
       )
       setup_instance.run([])
     end

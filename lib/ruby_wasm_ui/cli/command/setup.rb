@@ -32,7 +32,7 @@ module RubyWasmUi
           # Update .gitignore
           puts ""
           log_info("Step 3/4: Updating .gitignore...")
-          update_gitignore(["*.wasm", "/rubies", "/build"])
+          update_gitignore(["ruby.wasm", "/rubies", "/build", "/dist"])
           log_success("✓ .gitignore updated")
 
           # Create initial files
@@ -76,7 +76,7 @@ module RubyWasmUi
                 <title>My App</title>
                 <script type="module">
                   import { DefaultRubyVM } from "https://cdn.jsdelivr.net/npm/@ruby/wasm-wasi@2.7.2/dist/browser/+esm";
-                  const response = await fetch("../src.wasm");
+                  const response = await fetch("./src.wasm");
                   const module = await WebAssembly.compileStreaming(response);
                   const { vm } = await DefaultRubyVM(module);
                   vm.evalAsync(`

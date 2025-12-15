@@ -1,5 +1,6 @@
 # frozen_string_literal: true
 
+require "fileutils"
 require_relative "base"
 require "listen"
 require "rack"
@@ -76,16 +77,54 @@ module RubyWasmUi
         end
 
         def build
-          command = "bundle exec rbwasm pack ruby.wasm --dir ./src::./src -o src.wasm"
+          ensure_dist_directory
+
+          command = "bundle exec rbwasm pack ruby.wasm --dir ./src::./src -o dist/src.wasm"
           log_info("Building: #{command}")
 
           success = run_command(command, exit_on_error: false)
           if success
+            copy_non_ruby_files
             log_success("✓ Build completed")
           else
             log_error("Build failed")
           end
           success
+        end
+
+        def ensure_dist_directory
+          unless Dir.exist?("dist")
+            Dir.mkdir("dist")
+            log_info("Created dist directory")
+          end
+        end
+
+        def copy_non_ruby_files
+          log_info("Copying non-Ruby files from src to dist...")
+
+          copied_files = []
+          Dir.glob("src/**/*").each do |src_path|
+            next if File.directory?(src_path)
+            next if src_path.end_with?(".rb")
+
+            # Get relative path from src directory
+            relative_path = src_path.sub(/^src\//, "")
+            dest_path = File.join("dist", relative_path)
+
+            # Create destination directory if needed
+            dest_dir = File.dirname(dest_path)
+            FileUtils.mkdir_p(dest_dir) unless Dir.exist?(dest_dir)
+
+            # Copy file
+            FileUtils.cp(src_path, dest_path)
+            copied_files << relative_path
+          end
+
+          if copied_files.any?
+            log_success("✓ Copied #{copied_files.size} file(s): #{copied_files.join(', ')}")
+          else
+            log_info("No non-Ruby files to copy")
+          end
         end
 
         def start_file_watcher
@@ -132,11 +171,11 @@ module RubyWasmUi
           # Static file server application
           static_app = lambda do |env|
             path = env["PATH_INFO"]
-            if path == "/"
-              file_path = File.join(Dir.pwd, "src", "index.html")
-            else
-              file_path = File.join(Dir.pwd, path)
-            end
+            # Remove leading slash and handle root path
+            relative_path = path == "/" ? "index.html" : path.sub(/^\//, "")
+
+            # Serve files from dist directory
+            file_path = File.join(Dir.pwd, "dist", relative_path)
 
             if File.exist?(file_path) && File.file?(file_path)
               content_type = Rack::Mime.mime_type(File.extname(file_path), "text/html")
@@ -187,7 +226,7 @@ module RubyWasmUi
             # Open browser after a short delay to ensure server is ready
             Thread.new do
               sleep 1
-              open_browser("http://localhost:#{port}/src/index.html")
+              open_browser("http://localhost:#{port}/index.html")
             end
 
             Rack::Handler::Puma.run(app, Port: port, Host: "0.0.0.0")

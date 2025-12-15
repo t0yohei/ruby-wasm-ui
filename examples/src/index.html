@@ -5,7 +5,7 @@
     <title>My App</title>
     <script type="module">
       import { DefaultRubyVM } from "https://cdn.jsdelivr.net/npm/@ruby/wasm-wasi@2.7.2/dist/browser/+esm";
-      const response = await fetch("../src.wasm");
+      const response = await fetch("./src.wasm");
       const module = await WebAssembly.compileStreaming(response);
       const { vm } = await DefaultRubyVM(module);
       vm.evalAsync(`
