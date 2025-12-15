@@ -16,19 +16,19 @@ module RubyWasmUi
 
           ensure_src_directory
           ensure_ruby_wasm
+          ensure_dist_directory
 
           # Pack WASM file
           pack
+
+          # Copy non-Ruby files from src to dist
+          copy_non_ruby_files
         end
 
         private
 
         def pack
-          command = "bundle exec rbwasm pack ruby.wasm --dir ./src::./src -o src.wasm"
-          log_info("Packing: #{command}")
-
-          run_command(command)
-          log_success("✓ Pack completed")
+          pack_wasm(exit_on_error: true, log_prefix: 'Packing')
         end
       end
     end

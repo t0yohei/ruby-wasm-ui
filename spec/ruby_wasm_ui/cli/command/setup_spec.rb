@@ -13,11 +13,20 @@ RSpec.describe RubyWasmUi::Cli::Command::Setup do
   end
 
   describe '#run' do
+    let(:temp_dir) { Dir.mktmpdir }
+
+    around do |example|
+      Dir.chdir(temp_dir) do
+        example.run
+      end
+    ensure
+      FileUtils.rm_rf(temp_dir) if Dir.exist?(temp_dir)
+    end
+
     before do
       allow(setup_instance).to receive(:check_ruby_version).and_return(RUBY_VERSION.split('.')[0..1].join('.'))
       allow(setup_instance).to receive(:configure_excluded_gems)
       allow(setup_instance).to receive(:build_ruby_wasm)
-      allow(setup_instance).to receive(:update_gitignore)
       allow(setup_instance).to receive(:create_initial_files)
     end
 
@@ -44,10 +53,12 @@ RSpec.describe RubyWasmUi::Cli::Command::Setup do
     end
 
     it 'updates .gitignore with required entries' do
-      expect(setup_instance).to receive(:update_gitignore).with(
-        ['*.wasm', '/rubies', '/build']
-      )
       setup_instance.run([])
+      content = File.read('.gitignore')
+      expect(content).to include('ruby.wasm')
+      expect(content).to include('/rubies')
+      expect(content).to include('/build')
+      expect(content).to include('/dist')
     end
 
     it 'outputs completion message' do
@@ -85,7 +96,6 @@ RSpec.describe RubyWasmUi::Cli::Command::Setup do
       it 'does not execute subsequent steps' do
         expect(setup_instance).not_to receive(:configure_excluded_gems)
         expect(setup_instance).not_to receive(:build_ruby_wasm)
-        expect(setup_instance).not_to receive(:update_gitignore)
         expect(setup_instance).not_to receive(:create_initial_files)
         expect { setup_instance.run([]) }.to raise_error(SystemExit)
       end
@@ -97,7 +107,6 @@ RSpec.describe RubyWasmUi::Cli::Command::Setup do
         allow(setup_instance).to receive(:check_ruby_version).and_return('3.2')
         allow(setup_instance).to receive(:configure_excluded_gems)
         allow(setup_instance).to receive(:build_ruby_wasm)
-        allow(setup_instance).to receive(:update_gitignore)
         allow(setup_instance).to receive(:create_initial_files)
       end
 
@@ -179,6 +188,62 @@ RSpec.describe RubyWasmUi::Cli::Command::Setup do
 
         expect { setup_instance.send(:create_initial_files) }.to output(
           /src\/index.rb already exists, skipping initial file creation/
+        ).to_stdout
+      end
+    end
+  end
+
+  describe '#update_gitignore' do
+    let(:temp_dir) { Dir.mktmpdir }
+
+    around do |example|
+      Dir.chdir(temp_dir) do
+        example.run
+      end
+    ensure
+      FileUtils.rm_rf(temp_dir) if Dir.exist?(temp_dir)
+    end
+
+    context 'when .gitignore does not exist' do
+      it 'creates .gitignore with new entries' do
+        setup_instance.send(:update_gitignore, ['*.wasm', '/rubies'])
+        content = File.read('.gitignore')
+        expect(content).to include('*.wasm')
+        expect(content).to include('/rubies')
+      end
+    end
+
+    context 'when .gitignore exists' do
+      before do
+        File.write('.gitignore', "node_modules/\n*.log\n")
+      end
+
+      it 'adds new entries to existing .gitignore' do
+        setup_instance.send(:update_gitignore, ['*.wasm', '/rubies'])
+        content = File.read('.gitignore')
+        expect(content).to include('node_modules/')
+        expect(content).to include('*.log')
+        expect(content).to include('*.wasm')
+        expect(content).to include('/rubies')
+      end
+
+      it 'does not add duplicate entries' do
+        File.write('.gitignore', "*.wasm\n")
+        setup_instance.send(:update_gitignore, ['*.wasm', '/rubies'])
+        content = File.read('.gitignore')
+        expect(content.scan(/^\*\.wasm$/).count).to eq(1)
+      end
+
+      it 'outputs message when entries are added' do
+        expect { setup_instance.send(:update_gitignore, ['*.wasm']) }.to output(
+          /Added to .gitignore: \*\.wasm/
+        ).to_stdout
+      end
+
+      it 'outputs message when no entries are added' do
+        File.write('.gitignore', "*.wasm\n")
+        expect { setup_instance.send(:update_gitignore, ['*.wasm']) }.to output(
+          /No new entries added to .gitignore/
         ).to_stdout
       end
     end

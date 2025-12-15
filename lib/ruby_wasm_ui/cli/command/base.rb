@@ -1,5 +1,6 @@
 # frozen_string_literal: true
 
+require "fileutils"
 require "open3"
 require "bundler/setup"
 require "ruby_wasm"
@@ -74,35 +75,6 @@ module RubyWasmUi
           end
         end
 
-        def update_gitignore(entries_to_add)
-          gitignore_path = ".gitignore"
-
-          # Read existing .gitignore or create new content
-          if File.exist?(gitignore_path)
-            content = File.read(gitignore_path)
-            lines = content.lines.map(&:chomp)
-          else
-            lines = []
-          end
-
-          # Add entries that don't already exist
-          added_entries = []
-          entries_to_add.each do |entry|
-            unless lines.include?(entry)
-              lines << entry
-              added_entries << entry
-            end
-          end
-
-          # Write back to .gitignore
-          File.write(gitignore_path, lines.join("\n") + "\n")
-          if added_entries.any?
-            log_info("Added to .gitignore: #{added_entries.join(', ')}")
-          else
-            log_info("No new entries added to .gitignore (all entries already exist)")
-          end
-        end
-
         protected
 
         def log_info(message)
@@ -167,6 +139,52 @@ module RubyWasmUi
           command = ["build", "--ruby-version", ruby_version_str, "-o", "ruby.wasm"]
           cli = RubyWasm::CLI.new(stdout: $stdout, stderr: $stderr)
           cli.run(command)
+        end
+
+        def ensure_dist_directory
+          unless Dir.exist?("dist")
+            Dir.mkdir("dist")
+            log_info("Created dist directory")
+          end
+        end
+
+        def copy_non_ruby_files
+          log_info("Copying non-Ruby files from src to dist...")
+
+          copied_files = []
+          Dir.glob("src/**/*").each do |src_path|
+            next if File.directory?(src_path)
+            next if src_path.end_with?(".rb")
+
+            # Get relative path from src directory
+            relative_path = src_path.sub(/^src\//, "")
+            dest_path = File.join("dist", relative_path)
+
+            # Create destination directory if needed
+            dest_dir = File.dirname(dest_path)
+            FileUtils.mkdir_p(dest_dir) unless Dir.exist?(dest_dir)
+
+            # Copy file
+            FileUtils.cp(src_path, dest_path)
+            copied_files << relative_path
+          end
+
+          if copied_files.any?
+            log_success("✓ Copied #{copied_files.size} file(s): #{copied_files.join(', ')}")
+          else
+            log_info("No non-Ruby files to copy")
+          end
+        end
+
+        def pack_wasm(exit_on_error: true, log_prefix: "Packing")
+          command = "bundle exec rbwasm pack ruby.wasm --dir ./src::./src -o dist/src.wasm"
+          log_info("#{log_prefix}: #{command}")
+
+          success = run_command(command, exit_on_error: exit_on_error)
+          if success
+            log_success("✓ Pack completed")
+          end
+          success
         end
       end
     end

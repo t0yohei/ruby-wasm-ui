@@ -19,6 +19,7 @@ module RubyWasmUi
           puts ""
 
           ensure_src_directory
+          ensure_ruby_wasm
 
           # Initial build
           log_info("Performing initial build...")
@@ -76,11 +77,11 @@ module RubyWasmUi
         end
 
         def build
-          command = "bundle exec rbwasm pack ruby.wasm --dir ./src::./src -o src.wasm"
-          log_info("Building: #{command}")
+          ensure_dist_directory
 
-          success = run_command(command, exit_on_error: false)
+          success = pack_wasm(exit_on_error: false, log_prefix: "Building")
           if success
+            copy_non_ruby_files
             log_success("✓ Build completed")
           else
             log_error("Build failed")
@@ -132,11 +133,11 @@ module RubyWasmUi
           # Static file server application
           static_app = lambda do |env|
             path = env["PATH_INFO"]
-            if path == "/"
-              file_path = File.join(Dir.pwd, "src", "index.html")
-            else
-              file_path = File.join(Dir.pwd, path)
-            end
+            # Remove leading slash and handle root path
+            relative_path = path == "/" ? "index.html" : path.sub(/^\//, "")
+
+            # Serve files from dist directory
+            file_path = File.join(Dir.pwd, "dist", relative_path)
 
             if File.exist?(file_path) && File.file?(file_path)
               content_type = Rack::Mime.mime_type(File.extname(file_path), "text/html")
@@ -187,7 +188,7 @@ module RubyWasmUi
             # Open browser after a short delay to ensure server is ready
             Thread.new do
               sleep 1
-              open_browser("http://localhost:#{port}/src/index.html")
+              open_browser("http://localhost:#{port}/index.html")
             end
 
             Rack::Handler::Puma.run(app, Port: port, Host: "0.0.0.0")

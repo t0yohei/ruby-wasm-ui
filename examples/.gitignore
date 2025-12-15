@@ -1,3 +1,4 @@
-*.wasm
+ruby.wasm
 /rubies
 /build
+/dist

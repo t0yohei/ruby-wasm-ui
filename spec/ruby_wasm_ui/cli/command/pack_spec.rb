@@ -62,6 +62,7 @@ RSpec.describe RubyWasmUi::Cli::Command::Pack do
         FileUtils.mkdir_p('src')
         FileUtils.touch('ruby.wasm')
         allow(pack_instance).to receive(:pack)
+        allow(pack_instance).to receive(:copy_non_ruby_files)
       end
 
       it 'outputs packing message' do
@@ -72,6 +73,11 @@ RSpec.describe RubyWasmUi::Cli::Command::Pack do
 
       it 'calls pack method' do
         expect(pack_instance).to receive(:pack)
+        pack_instance.run([])
+      end
+
+      it 'calls copy_non_ruby_files method' do
+        expect(pack_instance).to receive(:copy_non_ruby_files)
         pack_instance.run([])
       end
     end
@@ -88,10 +94,8 @@ RSpec.describe RubyWasmUi::Cli::Command::Pack do
         allow(pack_instance).to receive(:run_command).and_return(true)
       end
 
-      it 'executes rbwasm pack command via run_command' do
-        expect(pack_instance).to receive(:run_command).with(
-          'bundle exec rbwasm pack ruby.wasm --dir ./src::./src -o src.wasm'
-        )
+      it 'calls pack_wasm with default parameters' do
+        expect(pack_instance).to receive(:pack_wasm).with(exit_on_error: true, log_prefix: 'Packing').and_return(true)
         pack_instance.send(:pack)
       end
 

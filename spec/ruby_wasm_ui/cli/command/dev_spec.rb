@@ -55,9 +55,28 @@ RSpec.describe RubyWasmUi::Cli::Command::Dev do
       end
     end
 
+    context 'when src directory exists but ruby.wasm does not exist' do
+      before do
+        FileUtils.mkdir_p('src')
+      end
+
+      it 'outputs error message and exits' do
+        expect { dev_instance.run([]) }.to output(
+          /ruby.wasm not found. Please run 'ruby-wasm-ui setup' first./
+        ).to_stdout.and raise_error(SystemExit)
+      end
+
+      it 'exits with status 1' do
+        expect { dev_instance.run([]) }.to raise_error(SystemExit) do |error|
+          expect(error.status).to eq(1)
+        end
+      end
+    end
+
     context 'when src directory exists' do
       before do
         FileUtils.mkdir_p('src')
+        FileUtils.touch('ruby.wasm')
       end
 
       it 'outputs starting message' do
@@ -116,6 +135,7 @@ RSpec.describe RubyWasmUi::Cli::Command::Dev do
   describe '#build' do
     before do
       FileUtils.mkdir_p('src')
+      FileUtils.touch('ruby.wasm')
     end
 
     context 'when command succeeds' do
@@ -123,11 +143,9 @@ RSpec.describe RubyWasmUi::Cli::Command::Dev do
         allow(dev_instance).to receive(:run_command).and_return(true)
       end
 
-      it 'executes rbwasm pack command via run_command' do
-        expect(dev_instance).to receive(:run_command).with(
-          'bundle exec rbwasm pack ruby.wasm --dir ./src::./src -o src.wasm',
-          exit_on_error: false
-        )
+      it 'calls pack_wasm with Building log_prefix' do
+        expect(dev_instance).to receive(:pack_wasm).with(exit_on_error: false, log_prefix: 'Building').and_return(true)
+        allow(dev_instance).to receive(:copy_non_ruby_files)
         dev_instance.send(:build)
       end
 
@@ -135,6 +153,12 @@ RSpec.describe RubyWasmUi::Cli::Command::Dev do
         expect { dev_instance.send(:build) }.to output(
           /Building: bundle exec rbwasm pack/
         ).to_stdout
+      end
+
+      it 'calls copy_non_ruby_files when build succeeds' do
+        allow(dev_instance).to receive(:pack_wasm).and_return(true)
+        expect(dev_instance).to receive(:copy_non_ruby_files)
+        dev_instance.send(:build)
       end
 
       it 'outputs success message' do
@@ -152,6 +176,12 @@ RSpec.describe RubyWasmUi::Cli::Command::Dev do
     context 'when command fails' do
       before do
         allow(dev_instance).to receive(:run_command).and_return(false)
+      end
+
+      it 'does not call copy_non_ruby_files when build fails' do
+        allow(dev_instance).to receive(:pack_wasm).and_return(false)
+        expect(dev_instance).not_to receive(:copy_non_ruby_files)
+        dev_instance.send(:build)
       end
 
       it 'outputs error message' do
@@ -306,7 +336,7 @@ RSpec.describe RubyWasmUi::Cli::Command::Dev do
           instance_double(Thread)
         end
 
-        expect(dev_instance).to receive(:open_browser).with('http://localhost:8080/src/index.html').and_return(nil)
+        expect(dev_instance).to receive(:open_browser).with('http://localhost:8080/index.html').and_return(nil)
 
         dev_instance.send(:start_server)
 
@@ -358,8 +388,8 @@ RSpec.describe RubyWasmUi::Cli::Command::Dev do
       end
 
       it 'calls open command' do
-        expect(dev_instance).to receive(:system).with('open', 'http://localhost:8080/src/index.html').and_return(true)
-        dev_instance.send(:open_browser, 'http://localhost:8080/src/index.html')
+        expect(dev_instance).to receive(:system).with('open', 'http://localhost:8080/index.html').and_return(true)
+        dev_instance.send(:open_browser, 'http://localhost:8080/index.html')
       end
 
       context 'when system call fails' do
@@ -368,8 +398,8 @@ RSpec.describe RubyWasmUi::Cli::Command::Dev do
         end
 
         it 'outputs fallback message' do
-          expect { dev_instance.send(:open_browser, 'http://localhost:8080/src/index.html') }.to output(
-            /Please open http:\/\/localhost:8080\/src\/index.html in your browser/
+          expect { dev_instance.send(:open_browser, 'http://localhost:8080/index.html') }.to output(
+            /Please open http:\/\/localhost:8080\/index.html in your browser/
           ).to_stdout
         end
       end
@@ -381,8 +411,8 @@ RSpec.describe RubyWasmUi::Cli::Command::Dev do
       end
 
       it 'calls xdg-open command' do
-        expect(dev_instance).to receive(:system).with('xdg-open', 'http://localhost:8080/src/index.html').and_return(true)
-        dev_instance.send(:open_browser, 'http://localhost:8080/src/index.html')
+        expect(dev_instance).to receive(:system).with('xdg-open', 'http://localhost:8080/index.html').and_return(true)
+        dev_instance.send(:open_browser, 'http://localhost:8080/index.html')
       end
     end
 
@@ -392,8 +422,8 @@ RSpec.describe RubyWasmUi::Cli::Command::Dev do
       end
 
       it 'calls start command' do
-        expect(dev_instance).to receive(:system).with('start', 'http://localhost:8080/src/index.html').and_return(true)
-        dev_instance.send(:open_browser, 'http://localhost:8080/src/index.html')
+        expect(dev_instance).to receive(:system).with('start', 'http://localhost:8080/index.html').and_return(true)
+        dev_instance.send(:open_browser, 'http://localhost:8080/index.html')
       end
     end
 
@@ -403,8 +433,8 @@ RSpec.describe RubyWasmUi::Cli::Command::Dev do
       end
 
       it 'outputs manual instruction' do
-        expect { dev_instance.send(:open_browser, 'http://localhost:8080/src/index.html') }.to output(
-          /Please open http:\/\/localhost:8080\/src\/index.html in your browser/
+        expect { dev_instance.send(:open_browser, 'http://localhost:8080/index.html') }.to output(
+          /Please open http:\/\/localhost:8080\/index.html in your browser/
         ).to_stdout
       end
     end
