@@ -75,35 +75,6 @@ module RubyWasmUi
           end
         end
 
-        def update_gitignore(entries_to_add)
-          gitignore_path = ".gitignore"
-
-          # Read existing .gitignore or create new content
-          if File.exist?(gitignore_path)
-            content = File.read(gitignore_path)
-            lines = content.lines.map(&:chomp)
-          else
-            lines = []
-          end
-
-          # Add entries that don't already exist
-          added_entries = []
-          entries_to_add.each do |entry|
-            unless lines.include?(entry)
-              lines << entry
-              added_entries << entry
-            end
-          end
-
-          # Write back to .gitignore
-          File.write(gitignore_path, lines.join("\n") + "\n")
-          if added_entries.any?
-            log_info("Added to .gitignore: #{added_entries.join(', ')}")
-          else
-            log_info("No new entries added to .gitignore (all entries already exist)")
-          end
-        end
-
         protected
 
         def log_info(message)
