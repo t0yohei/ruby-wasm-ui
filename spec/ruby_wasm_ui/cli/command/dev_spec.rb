@@ -55,9 +55,28 @@ RSpec.describe RubyWasmUi::Cli::Command::Dev do
       end
     end
 
+    context 'when src directory exists but ruby.wasm does not exist' do
+      before do
+        FileUtils.mkdir_p('src')
+      end
+
+      it 'outputs error message and exits' do
+        expect { dev_instance.run([]) }.to output(
+          /ruby.wasm not found. Please run 'ruby-wasm-ui setup' first./
+        ).to_stdout.and raise_error(SystemExit)
+      end
+
+      it 'exits with status 1' do
+        expect { dev_instance.run([]) }.to raise_error(SystemExit) do |error|
+          expect(error.status).to eq(1)
+        end
+      end
+    end
+
     context 'when src directory exists' do
       before do
         FileUtils.mkdir_p('src')
+        FileUtils.touch('ruby.wasm')
       end
 
       it 'outputs starting message' do

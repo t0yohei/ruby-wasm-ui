@@ -19,6 +19,7 @@ module RubyWasmUi
           puts ""
 
           ensure_src_directory
+          ensure_ruby_wasm
 
           # Initial build
           log_info("Performing initial build...")
