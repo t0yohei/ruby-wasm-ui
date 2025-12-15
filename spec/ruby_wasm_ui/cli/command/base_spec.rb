@@ -355,4 +355,206 @@ RSpec.describe RubyWasmUi::Cli::Command::Base do
       base_instance.send(:build_ruby_wasm, '3.4')
     end
   end
+
+  describe '#ensure_dist_directory' do
+    let(:temp_dir) { Dir.mktmpdir }
+    let(:original_dir) { Dir.pwd }
+
+    around do |example|
+      Dir.chdir(temp_dir) do
+        example.run
+      end
+    ensure
+      FileUtils.rm_rf(temp_dir) if Dir.exist?(temp_dir)
+    end
+
+    context 'when dist directory does not exist' do
+      it 'creates dist directory' do
+        expect(Dir.exist?('dist')).to be false
+        base_instance.send(:ensure_dist_directory)
+        expect(Dir.exist?('dist')).to be true
+      end
+
+      it 'outputs creation message' do
+        expect { base_instance.send(:ensure_dist_directory) }.to output(
+          /Created dist directory/
+        ).to_stdout
+      end
+    end
+
+    context 'when dist directory already exists' do
+      before do
+        FileUtils.mkdir_p('dist')
+      end
+
+      it 'does not create dist directory again' do
+        expect(Dir).not_to receive(:mkdir)
+        base_instance.send(:ensure_dist_directory)
+      end
+
+      it 'does not output creation message' do
+        expect { base_instance.send(:ensure_dist_directory) }.not_to output(
+          /Created dist directory/
+        ).to_stdout
+      end
+    end
+  end
+
+  describe '#copy_non_ruby_files' do
+    let(:temp_dir) { Dir.mktmpdir }
+    let(:original_dir) { Dir.pwd }
+
+    around do |example|
+      Dir.chdir(temp_dir) do
+        example.run
+      end
+    ensure
+      FileUtils.rm_rf(temp_dir) if Dir.exist?(temp_dir)
+    end
+
+    context 'when non-Ruby files exist' do
+      before do
+        FileUtils.mkdir_p('src')
+        File.write('src/index.html', '<html></html>')
+        File.write('src/style.css', 'body {}')
+        File.write('src/app.rb', 'puts "hello"')
+        FileUtils.mkdir_p('src/subdir')
+        File.write('src/subdir/script.js', 'console.log("test")')
+      end
+
+      it 'copies HTML files to dist' do
+        base_instance.send(:copy_non_ruby_files)
+        expect(File.exist?('dist/index.html')).to be true
+        expect(File.read('dist/index.html')).to eq('<html></html>')
+      end
+
+      it 'copies CSS files to dist' do
+        base_instance.send(:copy_non_ruby_files)
+        expect(File.exist?('dist/style.css')).to be true
+        expect(File.read('dist/style.css')).to eq('body {}')
+      end
+
+      it 'does not copy Ruby files' do
+        base_instance.send(:copy_non_ruby_files)
+        expect(File.exist?('dist/app.rb')).to be false
+      end
+
+      it 'preserves directory structure' do
+        base_instance.send(:copy_non_ruby_files)
+        expect(File.exist?('dist/subdir/script.js')).to be true
+        expect(File.read('dist/subdir/script.js')).to eq('console.log("test")')
+      end
+
+      it 'outputs success message with copied files' do
+        expect { base_instance.send(:copy_non_ruby_files) }.to output(
+          /Copied.*file\(s\)/
+        ).to_stdout
+      end
+    end
+
+    context 'when no non-Ruby files exist' do
+      before do
+        FileUtils.mkdir_p('src')
+        File.write('src/app.rb', 'puts "hello"')
+      end
+
+      it 'outputs no files message' do
+        expect { base_instance.send(:copy_non_ruby_files) }.to output(
+          /No non-Ruby files to copy/
+        ).to_stdout
+      end
+    end
+  end
+
+  describe '#pack_wasm' do
+    let(:temp_dir) { Dir.mktmpdir }
+    let(:original_dir) { Dir.pwd }
+
+    around do |example|
+      Dir.chdir(temp_dir) do
+        example.run
+      end
+    ensure
+      FileUtils.rm_rf(temp_dir) if Dir.exist?(temp_dir)
+    end
+
+    before do
+      FileUtils.mkdir_p('src')
+      FileUtils.touch('ruby.wasm')
+    end
+
+    context 'when command succeeds' do
+      before do
+        allow(base_instance).to receive(:run_command).and_return(true)
+      end
+
+      it 'executes rbwasm pack command via run_command' do
+        expect(base_instance).to receive(:run_command).with(
+          'bundle exec rbwasm pack ruby.wasm --dir ./src::./src -o dist/src.wasm',
+          exit_on_error: true
+        )
+        base_instance.send(:pack_wasm)
+      end
+
+      it 'outputs pack message with default prefix' do
+        expect { base_instance.send(:pack_wasm) }.to output(
+          /Packing: bundle exec rbwasm pack/
+        ).to_stdout
+      end
+
+      it 'outputs pack message with custom prefix' do
+        expect { base_instance.send(:pack_wasm, log_prefix: 'Building') }.to output(
+          /Building: bundle exec rbwasm pack/
+        ).to_stdout
+      end
+
+      it 'outputs success message' do
+        expect { base_instance.send(:pack_wasm) }.to output(
+          /Pack completed/
+        ).to_stdout
+      end
+
+      it 'returns true' do
+        result = base_instance.send(:pack_wasm)
+        expect(result).to be true
+      end
+    end
+
+    context 'when command fails' do
+      before do
+        allow(base_instance).to receive(:run_command).and_raise(SystemExit.new(1))
+      end
+
+      it 'outputs error message and exits by default' do
+        expect { base_instance.send(:pack_wasm) }.to raise_error(SystemExit)
+      end
+
+      it 'exits with status 1' do
+        expect { base_instance.send(:pack_wasm) }.to raise_error(SystemExit) do |error|
+          expect(error.status).to eq(1)
+        end
+      end
+
+      context 'when exit_on_error is false' do
+        before do
+          allow(base_instance).to receive(:run_command).and_return(false)
+        end
+
+        it 'does not raise error' do
+          expect { base_instance.send(:pack_wasm, exit_on_error: false) }.not_to raise_error
+        end
+
+        it 'returns false' do
+          result = base_instance.send(:pack_wasm, exit_on_error: false)
+          expect(result).to be false
+        end
+
+        it 'does not output success message when command fails' do
+          expect { base_instance.send(:pack_wasm, exit_on_error: false) }.not_to output(
+            /Pack completed/
+          ).to_stdout
+        end
+      end
+    end
+  end
 end

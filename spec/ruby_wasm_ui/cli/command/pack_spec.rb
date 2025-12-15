@@ -94,10 +94,8 @@ RSpec.describe RubyWasmUi::Cli::Command::Pack do
         allow(pack_instance).to receive(:run_command).and_return(true)
       end
 
-      it 'executes rbwasm pack command via run_command' do
-        expect(pack_instance).to receive(:run_command).with(
-          'bundle exec rbwasm pack ruby.wasm --dir ./src::./src -o dist/src.wasm'
-        )
+      it 'calls pack_wasm with default parameters' do
+        expect(pack_instance).to receive(:pack_wasm).with(exit_on_error: true, log_prefix: 'Packing').and_return(true)
         pack_instance.send(:pack)
       end
 
@@ -127,102 +125,6 @@ RSpec.describe RubyWasmUi::Cli::Command::Pack do
         expect { pack_instance.send(:pack) }.to raise_error(SystemExit) do |error|
           expect(error.status).to eq(1)
         end
-      end
-    end
-  end
-
-  describe '#ensure_dist_directory' do
-    before do
-      FileUtils.mkdir_p('src')
-      FileUtils.touch('ruby.wasm')
-    end
-
-    context 'when dist directory does not exist' do
-      it 'creates dist directory' do
-        expect(Dir.exist?('dist')).to be false
-        pack_instance.send(:ensure_dist_directory)
-        expect(Dir.exist?('dist')).to be true
-      end
-
-      it 'outputs creation message' do
-        expect { pack_instance.send(:ensure_dist_directory) }.to output(
-          /Created dist directory/
-        ).to_stdout
-      end
-    end
-
-    context 'when dist directory already exists' do
-      before do
-        FileUtils.mkdir_p('dist')
-      end
-
-      it 'does not create dist directory again' do
-        expect(Dir).not_to receive(:mkdir)
-        pack_instance.send(:ensure_dist_directory)
-      end
-
-      it 'does not output creation message' do
-        expect { pack_instance.send(:ensure_dist_directory) }.not_to output(
-          /Created dist directory/
-        ).to_stdout
-      end
-    end
-  end
-
-  describe '#copy_non_ruby_files' do
-    before do
-      FileUtils.mkdir_p('src')
-      FileUtils.touch('ruby.wasm')
-    end
-
-    context 'when non-Ruby files exist' do
-      before do
-        File.write('src/index.html', '<html></html>')
-        File.write('src/style.css', 'body {}')
-        File.write('src/app.rb', 'puts "hello"')
-        FileUtils.mkdir_p('src/subdir')
-        File.write('src/subdir/script.js', 'console.log("test")')
-      end
-
-      it 'copies HTML files to dist' do
-        pack_instance.send(:copy_non_ruby_files)
-        expect(File.exist?('dist/index.html')).to be true
-        expect(File.read('dist/index.html')).to eq('<html></html>')
-      end
-
-      it 'copies CSS files to dist' do
-        pack_instance.send(:copy_non_ruby_files)
-        expect(File.exist?('dist/style.css')).to be true
-        expect(File.read('dist/style.css')).to eq('body {}')
-      end
-
-      it 'does not copy Ruby files' do
-        pack_instance.send(:copy_non_ruby_files)
-        expect(File.exist?('dist/app.rb')).to be false
-      end
-
-      it 'preserves directory structure' do
-        pack_instance.send(:copy_non_ruby_files)
-        expect(File.exist?('dist/subdir/script.js')).to be true
-        expect(File.read('dist/subdir/script.js')).to eq('console.log("test")')
-      end
-
-      it 'outputs success message with copied files' do
-        expect { pack_instance.send(:copy_non_ruby_files) }.to output(
-          /Copied.*file\(s\)/
-        ).to_stdout
-      end
-    end
-
-    context 'when no non-Ruby files exist' do
-      before do
-        File.write('src/app.rb', 'puts "hello"')
-      end
-
-      it 'outputs no files message' do
-        expect { pack_instance.send(:copy_non_ruby_files) }.to output(
-          /No non-Ruby files to copy/
-        ).to_stdout
       end
     end
   end
