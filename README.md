@@ -21,7 +21,7 @@ Create an HTML file:
 <!DOCTYPE html>
 <html>
   <head>
-    <script src="https://unpkg.com/ruwi@0.9.1"></script>
+    <script src="https://unpkg.com/ruwi@0.10.0"></script>
     <script defer type="text/ruby" src="app.rb"></script>
   </head>
   <body>
