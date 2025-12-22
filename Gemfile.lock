@@ -1,7 +1,7 @@
 PATH
   remote: .
   specs:
-    ruwi (0.9.1)
+    ruwi (0.10.0)
       js (~> 2.7)
       listen (~> 3.8)
       puma (~> 6.0)

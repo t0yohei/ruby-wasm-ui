@@ -1,4 +1,4 @@
-# ruwi
+# Ruwi(Ruby Wasm Ui)
 
 A modern web frontend framework for Ruby using [ruby.wasm](https://github.com/ruby/ruby.wasm). Write reactive web applications using familiar Ruby syntax and patterns.
 
@@ -21,7 +21,7 @@ Create an HTML file:
 <!DOCTYPE html>
 <html>
   <head>
-    <script src="https://unpkg.com/ruwi@0.9.1"></script>
+    <script src="https://unpkg.com/ruwi@0.10.0"></script>
     <script defer type="text/ruby" src="app.rb"></script>
   </head>
   <body>
