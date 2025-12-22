@@ -1,4 +1,4 @@
-# ruby-wasm-ui
+# ruwi
 
 A modern web frontend framework for Ruby using [ruby.wasm](https://github.com/ruby/ruby.wasm). Write reactive web applications using familiar Ruby syntax and patterns.
 
@@ -21,7 +21,7 @@ Create an HTML file:
 <!DOCTYPE html>
 <html>
   <head>
-    <script src="https://unpkg.com/ruby-wasm-ui@0.9.1"></script>
+    <script src="https://unpkg.com/ruwi@0.9.1"></script>
     <script defer type="text/ruby" src="app.rb"></script>
   </head>
   <body>
@@ -36,7 +36,7 @@ Create `app.rb`:
 require "js"
 
 # Define a Counter component
-CounterComponent = RubyWasmUi.define_component(
+CounterComponent = Ruwi.define_component(
   # Initialize component state
   state: ->(props) {
     { count: props[:count] || 0 }
@@ -44,7 +44,7 @@ CounterComponent = RubyWasmUi.define_component(
 
   # Render the counter component
   template: ->() {
-    RubyWasmUi::Template::Parser.parse_and_eval(<<~HTML, binding)
+    Ruwi::Template::Parser.parse_and_eval(<<~HTML, binding)
       <div>
         <div>{state[:count]}</div>
         <!-- Both ButtonComponent and button-component are valid -->
@@ -72,9 +72,9 @@ CounterComponent = RubyWasmUi.define_component(
 )
 
 # Button component - reusable button with click handler
-ButtonComponent = RubyWasmUi.define_component(
+ButtonComponent = Ruwi.define_component(
   template: ->() {
-    RubyWasmUi::Template::Parser.parse_and_eval(<<~HTML, binding)
+    Ruwi::Template::Parser.parse_and_eval(<<~HTML, binding)
       <button on="{ click: ->() { emit('click_button') } }">
         {props[:label]}
       </button>
@@ -83,25 +83,25 @@ ButtonComponent = RubyWasmUi.define_component(
 )
 
 # Create and mount the app
-app = RubyWasmUi::App.create(CounterComponent, count: 5)
+app = Ruwi::App.create(CounterComponent, count: 5)
 app_element = JS.global[:document].getElementById("app")
 app.mount(app_element)
 ```
 
 ## Using as a Gem
 
-You can also use `ruby_wasm_ui` as a Ruby gem with `rbwasm` to build your application as a WASM file.
+You can also use `ruwi` as a Ruby gem with `rbwasm` to build your application as a WASM file.
 
 ### Setup
 
-1. Add `ruby_wasm_ui` to your `Gemfile`:
+1. Add `ruwi` to your `Gemfile`:
 
 ```ruby
 # frozen_string_literal: true
 
 source "https://rubygems.org"
 
-gem "ruby_wasm_ui"
+gem "ruwi"
 ```
 
 2. Install dependencies:
@@ -115,7 +115,7 @@ bundle install
 Set up your project (first time only):
 
 ```bash
-bundle exec ruby-wasm-ui setup
+bundle exec ruwi setup
 ```
 
 This command will:
@@ -139,7 +139,7 @@ my-app/
 
 - **Development server**: Start a development server with file watching and auto-build:
   ```bash
-  bundle exec ruby-wasm-ui dev
+  bundle exec ruwi dev
   ```
 
 Create an HTML file in the `src` directory that loads the WASM file:
@@ -156,7 +156,7 @@ Create an HTML file in the `src` directory that loads the WASM file:
       const module = await WebAssembly.compileStreaming(response);
       const { vm } = await DefaultRubyVM(module);
       vm.evalAsync(`
-        require "ruby_wasm_ui"
+        require "ruwi"
         require_relative './src/index.rb'
       `);
     </script>
@@ -167,15 +167,15 @@ Create an HTML file in the `src` directory that loads the WASM file:
 </html>
 ```
 
-Your `src/index.rb` file can use `ruby_wasm_ui` just like in the Quick Start example:
+Your `src/index.rb` file can use `ruwi` just like in the Quick Start example:
 
 ```ruby
-CounterComponent = RubyWasmUi.define_component(
+CounterComponent = Ruwi.define_component(
   state: ->(props) {
     { count: props[:count] || 0 }
   },
   template: ->() {
-    RubyWasmUi::Template::Parser.parse_and_eval(<<~HTML, binding)
+    Ruwi::Template::Parser.parse_and_eval(<<~HTML, binding)
       <div>
         <div>{state[:count]}</div>
         <button on="{ click: -> { increment } }">Increment</button>
@@ -189,7 +189,7 @@ CounterComponent = RubyWasmUi.define_component(
   }
 )
 
-app = RubyWasmUi::App.create(CounterComponent, count: 0)
+app = Ruwi::App.create(CounterComponent, count: 0)
 app_element = JS.global[:document].getElementById("app")
 app.mount(app_element)
 ```
@@ -201,7 +201,7 @@ See the [examples](examples) directory for a complete working example.
 
 - **Rebuild Ruby WASM**: Rebuild the Ruby WASM file when you add new gems:
   ```bash
-  bundle exec ruby-wasm-ui rebuild
+  bundle exec ruwi rebuild
   ```
 
 ### Deployment
@@ -209,7 +209,7 @@ See the [examples](examples) directory for a complete working example.
 Pack your application files for deployment:
 
 ```bash
-bundle exec ruby-wasm-ui pack
+bundle exec ruwi pack
 ```
 
 This command packs your Ruby files from the `./src` directory into the WASM file and outputs to the `dist` directory for deployment.

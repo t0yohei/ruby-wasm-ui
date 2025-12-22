@@ -1,7 +1,7 @@
 require "js"
 
 # Counter component using the latest component-based API with TemplateParser
-CounterComponent = RubyWasmUi.define_component(
+CounterComponent = Ruwi.define_component(
   # Initialize component state
   state: ->(props) {
     { count: props[:count] || 0 }
@@ -9,7 +9,7 @@ CounterComponent = RubyWasmUi.define_component(
 
   # Render the counter component
   template: ->() {
-    RubyWasmUi::Template::Parser.parse_and_eval(<<~HTML, binding)
+    Ruwi::Template::Parser.parse_and_eval(<<~HTML, binding)
       <div>
         <div>{state[:count]}</div>
         <!-- Both ButtonComponent and button-component are valid -->
@@ -40,9 +40,9 @@ CounterComponent = RubyWasmUi.define_component(
 )
 
 # Button component - reusable button with click handler
-ButtonComponent = RubyWasmUi.define_component(
+ButtonComponent = Ruwi.define_component(
   template: ->() {
-    RubyWasmUi::Template::Parser.parse_and_eval(<<~HTML, binding)
+    Ruwi::Template::Parser.parse_and_eval(<<~HTML, binding)
       <button on="{ click: ->() { emit('click_button') } }">
         {props[:label]}
       </button>
@@ -51,12 +51,12 @@ ButtonComponent = RubyWasmUi.define_component(
 )
 
 # app_a to be destroyed
-app_a = RubyWasmUi::App.create(CounterComponent, count: 0)
+app_a = Ruwi::App.create(CounterComponent, count: 0)
 app_element_a = JS.global[:document].getElementById("app-a")
 app_a.mount(app_element_a)
 app_a.unmount
 
 # app_b to be mounted
-app_b = RubyWasmUi::App.create(CounterComponent, count: 10)
+app_b = Ruwi::App.create(CounterComponent, count: 10)
 app_element_b = JS.global[:document].getElementById("app-b")
 app_b.mount(app_element_b)

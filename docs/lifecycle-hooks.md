@@ -3,7 +3,7 @@
 Components support lifecycle hooks to execute code at specific points in a component's lifecycle:
 
 ```ruby
-RandomCocktailComponent = RubyWasmUi.define_component(
+RandomCocktailComponent = Ruwi.define_component(
   state: ->() {
     {
       is_loading: false,
@@ -54,7 +54,7 @@ RandomCocktailComponent = RubyWasmUi.define_component(
       </div>
     HTML
 
-    RubyWasmUi::Template::Parser.parse_and_eval(template, binding)
+    Ruwi::Template::Parser.parse_and_eval(template, binding)
   }
 )
 ```
@@ -72,4 +72,4 @@ The `on_mounted` hook is called after the component is mounted to the DOM. This 
 
 ## Asynchronous Operations
 
-Note: Unlike JavaScript frameworks, asynchronous operations in ruby-wasm-ui are designed to use Ruby's Fiber system rather than Promises.
+Note: Unlike JavaScript frameworks, asynchronous operations in ruwi are designed to use Ruby's Fiber system rather than Promises.

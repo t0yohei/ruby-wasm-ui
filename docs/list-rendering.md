@@ -1,21 +1,21 @@
 # List Rendering with r-for
 
-ruby-wasm-ui provides the `r-for` directive for rendering lists of items. You can use `r-for` with both components and regular HTML elements:
+ruwi provides the `r-for` directive for rendering lists of items. You can use `r-for` with both components and regular HTML elements:
 
 ```ruby
 # Define a reusable list item component
-ListItem = RubyWasmUi.define_component(
+ListItem = Ruwi.define_component(
   template: ->() {
-    RubyWasmUi::Template::Parser.parse_and_eval(<<~HTML, binding)
+    Ruwi::Template::Parser.parse_and_eval(<<~HTML, binding)
       <li>{props[:todo]}</li>
     HTML
   }
 )
 
 # Main list component demonstrating r-for usage
-List = RubyWasmUi.define_component(
+List = Ruwi.define_component(
   template: ->() {
-    RubyWasmUi::Template::Parser.parse_and_eval(<<~HTML, binding)
+    Ruwi::Template::Parser.parse_and_eval(<<~HTML, binding)
       <ul>
         <!-- Using r-for with a component -->
         <ListItem
@@ -33,7 +33,7 @@ List = RubyWasmUi.define_component(
 )
 
 # Create and mount the app with initial data
-app = RubyWasmUi::App.create(List, { todos: ['foo', 'bar', 'baz'] })
+app = Ruwi::App.create(List, { todos: ['foo', 'bar', 'baz'] })
 app_element = JS.global[:document].getElementById("app")
 app.mount(app_element)
 ```

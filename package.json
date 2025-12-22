@@ -1,5 +1,5 @@
 {
-  "name": "ruby-wasm-ui-project",
+  "name": "ruwi-project",
   "version": "0.9.1",
   "private": true,
   "description": "A project to ruby.wasm ui framework",

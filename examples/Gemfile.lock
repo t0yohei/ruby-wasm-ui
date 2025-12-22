@@ -1,7 +1,7 @@
 PATH
   remote: ../..
   specs:
-    ruby_wasm_ui (0.9.0)
+    ruwi (0.9.1)
       js (~> 2.7)
       listen (~> 3.8)
       puma (~> 6.0)
@@ -33,7 +33,7 @@ PLATFORMS
   arm64-darwin
 
 DEPENDENCIES
-  ruby_wasm_ui!
+  ruwi!
 
 BUNDLED WITH
    2.7.2

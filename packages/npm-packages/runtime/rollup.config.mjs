@@ -16,9 +16,9 @@ import { fileURLToPath } from "url";
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
 
-// Find all Ruby files in ruby_wasm_ui directory
+// Find all Ruby files in ruwi directory
 const rubyFiles = glob
-  .sync("src/ruby_wasm_ui/runtime/**/*.rb")
+  .sync("src/ruwi/runtime/**/*.rb")
   .map((file) => file.replace("src/", ""))
   .sort((a, b) => {
     // Files in root directory should be loaded first
@@ -39,7 +39,7 @@ const cleanupSymlinks = () => {
   return {
     name: "cleanup-symlinks",
     buildStart() {
-      const distRubyFilePath = join(__dirname, "dist/ruby_wasm_ui.rb");
+      const distRubyFilePath = join(__dirname, "dist/ruwi.rb");
       try {
         const stats = lstatSync(distRubyFilePath);
         if (stats.isSymbolicLink() || stats.isFile()) {
@@ -58,7 +58,7 @@ const removeRequireRelative = () => {
   return {
     name: "remove-require-relative",
     writeBundle() {
-      // Process all Ruby files in dist directory (including dist/ruby_wasm_ui.rb)
+      // Process all Ruby files in dist directory (including dist/ruwi.rb)
       // Ensure we only process files in dist/ directory, not lib/ or other source directories
       const distDir = join(__dirname, "dist");
       const distRubyFiles = glob.sync("dist/**/*.rb", {
@@ -104,7 +104,7 @@ const removeRequireRelative = () => {
 export default {
   input: "src/index.js",
   output: {
-    file: "dist/ruby-wasm-ui.js",
+    file: "dist/ruwi.js",
     format: "esm",
     sourcemap: true,
   },
@@ -112,27 +112,27 @@ export default {
     replace({
       preventAssignment: true,
       values: {
-        "window.RUBY_WASM_UI_ENV": JSON.stringify(
+        "window.RUWI_ENV": JSON.stringify(
           isDevelopment ? "development" : "production"
         ),
-        "window.RUBY_WASM_UI_FILES": JSON.stringify(rubyFiles),
+        "window.RUWI_FILES": JSON.stringify(rubyFiles),
       },
     }),
     cleanupSymlinks(),
-    copy({
+      copy({
       targets: [
         {
-          src: "src/ruby_wasm_ui/**/*",
-          dest: "dist/ruby_wasm_ui",
+          src: "src/ruwi/**/*",
+          dest: "dist/ruwi",
           flatten: false,
         },
         {
-          src: "src/ruby_wasm_ui.rb",
+          src: "src/ruwi.rb",
           dest: "dist",
         },
       ],
       // Resolve symbolic links when copying to ensure dist files are regular files
-      // This allows us to process dist/ruby_wasm_ui.rb without affecting lib/ruby_wasm_ui.rb
+      // This allows us to process dist/ruwi.rb without affecting lib/ruwi.rb
       copySyncOptions: {
         dereference: true,
       },

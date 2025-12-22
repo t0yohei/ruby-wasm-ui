@@ -1,10 +1,10 @@
 # Conditional Rendering with r-if
 
-ruby-wasm-ui provides the `r-if` directive for conditional rendering of elements based on state or computed values:
+ruwi provides the `r-if` directive for conditional rendering of elements based on state or computed values:
 
 ```ruby
 # Component demonstrating r-if conditional rendering
-ConditionalComponent = RubyWasmUi.define_component(
+ConditionalComponent = Ruwi.define_component(
   state: ->() {
     {
       show_message: false,
@@ -13,7 +13,7 @@ ConditionalComponent = RubyWasmUi.define_component(
   },
 
   template: ->() {
-    RubyWasmUi::Template::Parser.parse_and_eval(<<~HTML, binding)
+    Ruwi::Template::Parser.parse_and_eval(<<~HTML, binding)
       <div>
         <!-- Simple boolean condition -->
         <div r-if="{state[:show_message]}">
@@ -81,7 +81,7 @@ All conditional expressions are evaluated as Ruby code within curly braces `{}`:
 
 ```ruby
 # Real-world example with loading states and data
-LoadingComponent = RubyWasmUi.define_component(
+LoadingComponent = Ruwi.define_component(
   state: ->() {
     {
       is_loading: false,
@@ -91,7 +91,7 @@ LoadingComponent = RubyWasmUi.define_component(
   },
 
   template: ->() {
-    RubyWasmUi::Template::Parser.parse_and_eval(<<~HTML, binding)
+    Ruwi::Template::Parser.parse_and_eval(<<~HTML, binding)
       <div>
         <!-- Loading state -->
         <p r-if="{state[:is_loading]}">Loading...</p>

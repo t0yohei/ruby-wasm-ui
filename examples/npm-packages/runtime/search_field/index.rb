@@ -1,9 +1,9 @@
 require "js"
 
 # search-field component definition
-SearchField = RubyWasmUi.define_component(
+SearchField = Ruwi.define_component(
   template: ->() {
-    RubyWasmUi::Template::Parser.parse_and_eval(<<~HTML, binding)
+    Ruwi::Template::Parser.parse_and_eval(<<~HTML, binding)
       <input
         type="text"
         placeholder="Search..."
@@ -15,12 +15,12 @@ SearchField = RubyWasmUi.define_component(
 )
 
 # search-demo component to show the search functionality
-SearchDemo = RubyWasmUi.define_component(
+SearchDemo = Ruwi.define_component(
   state: ->() {
     { search_term: '' }
   },
   template: ->() {
-    RubyWasmUi::Template::Parser.parse_and_eval(<<~HTML, binding)
+    Ruwi::Template::Parser.parse_and_eval(<<~HTML, binding)
       <template>
         <h2>Search Demo</h2>
         <search-field
@@ -34,6 +34,6 @@ SearchDemo = RubyWasmUi.define_component(
 )
 
 # Create and mount the app
-app = RubyWasmUi::App.create(SearchDemo)
+app = Ruwi::App.create(SearchDemo)
 app_element = JS.global[:document].getElementById("app")
 app.mount(app_element)

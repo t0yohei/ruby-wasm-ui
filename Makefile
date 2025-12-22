@@ -6,7 +6,7 @@ help:
 	@echo "Example: make bump 0.9.0"
 	@echo ""
 	@echo "This command updates the version number in the following files:"
-	@echo "  - lib/ruby_wasm_ui/version.rb"
+	@echo "  - lib/ruwi/version.rb"
 	@echo "  - package.json"
 	@echo "  - packages/npm-packages/runtime/package.json"
 	@echo "  - README.md"
@@ -27,9 +27,9 @@ bump:
 		exit 1; \
 	fi
 	@echo "Bumping version to $(VERSION)..."
-	@# Update lib/ruby_wasm_ui/version.rb
-	@sed -i '' 's/VERSION = ".*"/VERSION = "$(VERSION)"/' lib/ruby_wasm_ui/version.rb
-	@echo "✓ Updated lib/ruby_wasm_ui/version.rb"
+	@# Update lib/ruwi/version.rb
+	@sed -i '' 's/VERSION = ".*"/VERSION = "$(VERSION)"/' lib/ruwi/version.rb
+	@echo "✓ Updated lib/ruwi/version.rb"
 	@# Update Gemfile.lock
 	@bundle install
 	@echo "✓ Updated Gemfile.lock"
@@ -40,7 +40,7 @@ bump:
 	@sed -i '' 's/"version": ".*"/"version": "$(VERSION)"/' packages/npm-packages/runtime/package.json
 	@echo "✓ Updated packages/npm-packages/runtime/package.json"
 	@# Update README.md (unpkg.com URL)
-	@sed -i '' 's|unpkg.com/ruby-wasm-ui@[0-9.]*|unpkg.com/ruby-wasm-ui@$(VERSION)|' README.md
+	@sed -i '' 's|unpkg.com/ruwi@[0-9.]*|unpkg.com/ruwi@$(VERSION)|' README.md
 	@echo "✓ Updated README.md"
 	@echo ""
 	@echo "Updating package-lock.json files..."

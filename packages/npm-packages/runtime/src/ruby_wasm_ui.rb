@@ -1,1 +1,0 @@
-../../../../lib/ruby_wasm_ui.rb

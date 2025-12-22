@@ -2,4 +2,4 @@
 
 source "https://rubygems.org"
 
-gem "ruby_wasm_ui", path: "../../"
+gem "ruwi", path: "../../"
