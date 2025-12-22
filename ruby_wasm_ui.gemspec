@@ -8,8 +8,8 @@ Gem::Specification.new do |spec|
   spec.authors = ["t0yohei"]
   spec.email = ["k.t0yohei@gmail.com"]
 
-  spec.summary = "A modern web frontend framework for Ruby using ruby.wasm"
-  spec.description = "Write reactive web applications using familiar Ruby syntax and patterns"
+  spec.summary = "A modern web frontend framework for Ruby using ruby.wasm (⚠️ This gem has been renamed to 'ruwi' starting from v0.10.0)"
+  spec.description = "Write reactive web applications using familiar Ruby syntax and patterns. ⚠️ WARNING: This gem has been renamed to 'ruwi' starting from v0.10.0. Please migrate to the 'ruwi' gem. See https://github.com/t0yohei/ruby-wasm-ui/releases/tag/v0.10.0 for migration details."
   spec.homepage = "https://github.com/t0yohei/ruby-wasm-ui"
   spec.license = "MIT"
   spec.required_ruby_version = ">= 3.2.0"
