@@ -2,7 +2,7 @@
 
 source "https://rubygems.org"
 
-# Specify your gem's dependencies in ruby_wasm_ui.gemspec
+# Specify your gem's dependencies in ruwi.gemspec
 gemspec
 
 gem "irb"

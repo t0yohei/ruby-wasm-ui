@@ -1,7 +1,7 @@
 require "js"
 
 # input-form component using the latest component-based API
-InputForm = RubyWasmUi.define_component(
+InputForm = Ruwi.define_component(
   # Initialize component state
   state: ->() {
     {
@@ -12,7 +12,7 @@ InputForm = RubyWasmUi.define_component(
 
   # Render the input component
   template: ->() {
-    RubyWasmUi::Template::Parser.parse_and_eval(<<~HTML, binding)
+    Ruwi::Template::Parser.parse_and_eval(<<~HTML, binding)
       <form class="w-full max-w-sm">
         <label class="block mb-2 text-sm font-medium text-700">User Name</label>
         <input
@@ -41,6 +41,6 @@ InputForm = RubyWasmUi.define_component(
   }
 )
 
-app = RubyWasmUi::App.create(InputForm)
+app = Ruwi::App.create(InputForm)
 app_element = JS.global[:document].getElementById("app")
 app.mount(app_element)

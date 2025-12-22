@@ -1,7 +1,7 @@
 require "js"
 
 # R-If Attribute Demo component to demonstrate conditional rendering using r-if attribute
-RIfAttributeDemo = RubyWasmUi.define_component(
+RIfAttributeDemo = Ruwi.define_component(
   # Initialize component state
   state: ->() {
     {
@@ -12,7 +12,7 @@ RIfAttributeDemo = RubyWasmUi.define_component(
 
   # Render the component with r-if attribute examples
   template: ->() {
-    RubyWasmUi::Template::Parser.parse_and_eval(<<~HTML, binding)
+    Ruwi::Template::Parser.parse_and_eval(<<~HTML, binding)
       <div>
         <p>Using r-if as an attribute (like Vue.js r-if)</p>
 
@@ -108,6 +108,6 @@ RIfAttributeDemo = RubyWasmUi.define_component(
 )
 
 # Create and mount the app
-app = RubyWasmUi::App.create(RIfAttributeDemo)
+app = Ruwi::App.create(RIfAttributeDemo)
 app_element = JS.global[:document].getElementById("app")
 app.mount(app_element)

@@ -1,6 +1,6 @@
 require "js"
 
-random_cocktail = RubyWasmUi.define_component(
+random_cocktail = Ruwi.define_component(
   state: ->() {
     {
       is_loading: false,
@@ -25,7 +25,7 @@ random_cocktail = RubyWasmUi.define_component(
       </template>
     HTML
 
-    RubyWasmUi::Template::Parser.parse_and_eval(template, binding)
+    Ruwi::Template::Parser.parse_and_eval(template, binding)
   },
 
   methods: {
@@ -49,13 +49,13 @@ random_cocktail = RubyWasmUi.define_component(
   }
 )
 
-ButtonComponent = RubyWasmUi.define_component(
+ButtonComponent = Ruwi.define_component(
   state: ->(props) {
     { label: props[:label] }
   },
 
   template: ->() {
-    RubyWasmUi::Template::Parser.parse_and_eval(<<~HTML, binding)
+    Ruwi::Template::Parser.parse_and_eval(<<~HTML, binding)
       <button on="{click: ->() { emit('click_button') }}" style="display: block; margin: 1em auto">
         {state[:label]}
       </button>
@@ -64,6 +64,6 @@ ButtonComponent = RubyWasmUi.define_component(
 )
 
 # Create and mount the app
-app = RubyWasmUi::App.create(random_cocktail)
+app = Ruwi::App.create(random_cocktail)
 app_element = JS.global[:document].getElementById("app")
 app.mount(app_element)

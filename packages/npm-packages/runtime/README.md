@@ -1,4 +1,4 @@
-# ruby-wasm-ui
+# ruwi
 
 A modern web frontend framework for Ruby using [ruby.wasm](https://github.com/ruby/ruby.wasm). Write reactive web applications using familiar Ruby syntax and patterns.
 

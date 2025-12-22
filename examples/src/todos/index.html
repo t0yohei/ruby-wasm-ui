@@ -9,7 +9,7 @@
       const module = await WebAssembly.compileStreaming(response);
       const { vm } = await DefaultRubyVM(module);
       vm.evalAsync(`
-        require "ruby_wasm_ui"
+        require "ruwi"
         require_relative './src/todos/todos_repository.rb'
         require_relative './src/todos/index.rb'
       `);

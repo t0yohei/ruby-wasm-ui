@@ -2,7 +2,7 @@
   "name": "gem",
   "private": true,
   "version": "0.0.1",
-  "description": "A Ruby gem for the ruby-wasm-ui framework",
+  "description": "A Ruby gem for the ruwi framework",
   "license": "MIT",
   "author": "t0yohei <k.t0yohei@gmail.com>",
   "type": "module",

@@ -1,12 +1,12 @@
 {
-  "name": "ruby-wasm-ui",
+  "name": "ruwi",
   "version": "0.9.1",
   "description": "",
-  "main": "dist/ruby-wasm-ui.js",
+  "main": "dist/ruwi.js",
   "files": [
-    "dist/ruby-wasm-ui.js",
-    "dist/ruby_wasm_ui.rb",
-    "dist/ruby_wasm_ui/**/*.rb"
+    "dist/ruwi.js",
+    "dist/ruwi.rb",
+    "dist/ruwi/**/*.rb"
   ],
   "scripts": {
     "prepack": "npm run build",
