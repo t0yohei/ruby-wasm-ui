@@ -1,6 +1,6 @@
 {
   "name": "ruby-wasm-ui-project",
-  "version": "0.9.1",
+  "version": "0.9.2",
   "private": true,
   "description": "A project to ruby.wasm ui framework",
   "scripts": {
